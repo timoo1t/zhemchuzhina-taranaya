@@ -25,20 +25,26 @@ async function api(path, opts = {}) {
 /* Boot: check auth */
 
 async function boot() {
+  console.log('[admin] boot start');
   try {
     const status = await api('/api/admin/status');
+    console.log('[admin] status =', status);
     el('admin-boot').hidden = true;
     if (!status.configured) {
+      console.warn('[admin] ADMIN_PASSWORD not set on server');
       showLogin();
       el('admin-login-hint').hidden = false;
       return;
     }
     if (status.authenticated) {
+      console.log('[admin] already authenticated -> showApp');
       showApp();
     } else {
+      console.log('[admin] not authenticated -> showLogin');
       showLogin();
     }
   } catch (err) {
+    console.error('[admin] boot error:', err);
     el('admin-boot').textContent = 'Ошибка загрузки: ' + err.message;
   }
 }
@@ -59,13 +65,16 @@ function showApp() {
 
 el('admin-login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  console.log('[admin] login submit');
   const password = e.target.password.value;
   const errEl = el('admin-login-error');
   errEl.hidden = true;
   try {
-    await api('/api/admin/login', { method: 'POST', body: { password } });
+    const res = await api('/api/admin/login', { method: 'POST', body: { password } });
+    console.log('[admin] login success:', res);
     showApp();
   } catch (err) {
+    console.error('[admin] login failed:', err);
     errEl.textContent = err.message;
     errEl.hidden = false;
   }
