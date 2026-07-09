@@ -245,9 +245,12 @@ a { color: inherit; text-decoration: none; }
   border-color: var(--ink);
 }
 
-.header__max svg {
-  width: 14px;
-  height: 14px;
+.header__max svg,
+.header__max .max-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+  border-radius: 4px;
 }
 
 @media (hover: hover) {
@@ -1235,10 +1238,29 @@ a { color: inherit; text-decoration: none; }
   justify-content: center;
   width: 72px;
   height: 72px;
-  border-radius: 999px;
-  background: rgba(247, 242, 232, 0.08);
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--paper);
   color: var(--paper);
   flex-shrink: 0;
+}
+
+.max-promo__logo {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.max-icon {
+  display: block;
+  border-radius: 4px;
+}
+
+.max-icon--lg {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
 }
 
 .max-promo__text {
