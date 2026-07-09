@@ -11,6 +11,8 @@ import {
   bookingToMaxPayload,
   getBookedRanges,
   getAllBookings,
+  updateBooking,
+  deleteBooking,
 } from './src/booking-store.js';
 import { notifyAdminAboutBooking } from './src/notify-booking.js';
 import { sendBookingReceiptEmail } from './src/booking-email.js';
@@ -32,6 +34,7 @@ import {
   statusHandler,
   requireAdmin,
 } from './src/admin-auth.js';
+import { getSettings, updateSettings } from './src/settings-store.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -76,6 +79,15 @@ function rangesOverlap(aFrom, aTo, bFrom, bTo) {
   return aFrom < bTo && aTo > bFrom;
 }
 
+function findDateConflict(houseNumber, checkIn, checkOut, { ignoreBookingId } = {}) {
+  const own = [
+    ...getBlockedRanges(houseNumber).map((r) => ({ from: r.from, to: r.to })),
+    ...getBookedRanges(houseNumber).filter((r) => r.bookingId !== ignoreBookingId),
+  ];
+  const conflicts = [...own, ...crossBlockedRangesFor(houseNumber)];
+  return conflicts.find((r) => rangesOverlap(checkIn, checkOut, r.from, r.to)) || null;
+}
+
 function crossBlockedRangesFor(num) {
   const houses = getHouses();
   const target = houses.find((h) => Number(h.num) === Number(num));
@@ -107,12 +119,14 @@ app.get('/api/health', (_req, res) => {
 
 app.get('/api/config', (req, res) => {
   const publicBase = publicSiteUrl(req);
+  const s = getSettings();
 
   res.json({
     siteName: process.env.SITE_NAME || 'Жемчужина-Тараная',
-    sitePhone: process.env.SITE_PHONE || '',
-    siteEmail: process.env.SITE_EMAIL || '',
-    maxChannelUrl: process.env.MAX_CHANNEL_URL || '',
+    sitePhone: s.sitePhone || process.env.SITE_PHONE || '',
+    sitePhoneSecondary: s.sitePhoneSecondary || '',
+    siteEmail: s.siteEmail || process.env.SITE_EMAIL || '',
+    maxChannelUrl: s.maxChannelUrl || process.env.MAX_CHANNEL_URL || '',
     pricePerNight: DEFAULT_PRICE_PER_NIGHT,
     publicUrl: publicBase || null,
   });
@@ -160,12 +174,7 @@ app.post('/api/booking/pay', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Такого варианта размещения нет' });
     }
 
-    const ownRanges = [
-      ...getBlockedRanges(houseNumber).map((r) => ({ from: r.from, to: r.to })),
-      ...getBookedRanges(houseNumber),
-    ];
-    const conflicts = [...ownRanges, ...crossBlockedRangesFor(houseNumber)];
-    const clash = conflicts.find((r) => rangesOverlap(checkIn, checkOut, r.from, r.to));
+    const clash = findDateConflict(houseNumber, checkIn, checkOut);
     if (clash) {
       return res.status(409).json({ ok: false, error: 'Эти даты уже заняты, выберите другие' });
     }
@@ -371,6 +380,92 @@ app.put('/api/admin/reviews/:id', requireAdmin, (req, res) => {
 
 app.get('/api/admin/bookings', requireAdmin, (_req, res) => {
   res.json({ ok: true, bookings: getAllBookings() });
+});
+
+app.post('/api/admin/bookings', requireAdmin, (req, res) => {
+  const { houseNumber, checkIn, checkOut, guestName, guestPhone, guestEmail, guests, amount, note } = req.body || {};
+  if (!houseNumber || !checkIn || !checkOut || !guestName) {
+    return res.status(400).json({ ok: false, error: 'houseNumber, checkIn, checkOut, guestName обязательны' });
+  }
+  if (checkIn >= checkOut) {
+    return res.status(400).json({ ok: false, error: 'Дата выезда должна быть позже даты заезда' });
+  }
+  const house = getHouse(houseNumber);
+  if (!house) return res.status(400).json({ ok: false, error: 'Такого варианта размещения нет' });
+
+  const clash = findDateConflict(houseNumber, checkIn, checkOut);
+  if (clash) return res.status(409).json({ ok: false, error: 'Эти даты уже заняты' });
+
+  const finalAmount = Number(amount) > 0 ? Number(amount) : calcAmount(houseNumber, checkIn, checkOut);
+  const now = new Date().toISOString();
+  const booking = createBooking({
+    houseNumber: Number(houseNumber),
+    checkIn,
+    checkOut,
+    guestName: String(guestName).trim(),
+    guestPhone: String(guestPhone || '').trim(),
+    guestEmail: String(guestEmail || '').trim(),
+    guests: Number(guests) || 1,
+    amount: finalAmount,
+    note: note ? String(note).trim() : '',
+  });
+  const paid = updateBooking(booking.id, { status: 'paid', paidAt: now, paymentId: `manual-${Date.now()}` });
+  res.json({ ok: true, booking: paid });
+});
+
+app.post('/api/admin/bookings/:id/mark-paid', requireAdmin, (req, res) => {
+  const existing = getBooking(req.params.id);
+  if (!existing) return res.status(404).json({ ok: false });
+  if (existing.status === 'paid') return res.json({ ok: true, booking: existing });
+
+  const clash = findDateConflict(existing.houseNumber, existing.checkIn, existing.checkOut, { ignoreBookingId: existing.id });
+  if (clash) return res.status(409).json({ ok: false, error: 'Даты пересекаются с другой бронью' });
+
+  const updated = updateBooking(req.params.id, {
+    status: 'paid',
+    paidAt: new Date().toISOString(),
+    paymentId: existing.paymentId || `manual-${Date.now()}`,
+  });
+  res.json({ ok: true, booking: updated });
+});
+
+app.post('/api/admin/bookings/:id/cancel', requireAdmin, (req, res) => {
+  const existing = getBooking(req.params.id);
+  if (!existing) return res.status(404).json({ ok: false });
+  const updated = updateBooking(req.params.id, {
+    status: 'cancelled',
+    cancelledAt: new Date().toISOString(),
+  });
+  res.json({ ok: true, booking: updated });
+});
+
+app.delete('/api/admin/bookings/:id', requireAdmin, (req, res) => {
+  const ok = deleteBooking(req.params.id);
+  if (!ok) return res.status(404).json({ ok: false });
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/settings', requireAdmin, (_req, res) => {
+  const s = getSettings();
+  res.json({
+    ok: true,
+    settings: {
+      sitePhone: s.sitePhone || process.env.SITE_PHONE || '',
+      sitePhoneSecondary: s.sitePhoneSecondary || '',
+      siteEmail: s.siteEmail || process.env.SITE_EMAIL || '',
+      maxChannelUrl: s.maxChannelUrl || process.env.MAX_CHANNEL_URL || '',
+    },
+    defaults: {
+      sitePhone: process.env.SITE_PHONE || '',
+      siteEmail: process.env.SITE_EMAIL || '',
+      maxChannelUrl: process.env.MAX_CHANNEL_URL || '',
+    },
+  });
+});
+
+app.put('/api/admin/settings', requireAdmin, (req, res) => {
+  const updated = updateSettings(req.body || {});
+  res.json({ ok: true, settings: updated });
 });
 
 app.delete('/api/admin/reviews/:id', requireAdmin, (req, res) => {

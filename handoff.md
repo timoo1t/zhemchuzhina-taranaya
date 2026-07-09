@@ -100,7 +100,12 @@ Each entry:
 - [ ] **Notify channel**: currently `NOTIFY_VIA=off` in `.env`. Pick `vk` / `max` / `sms` and fill the relevant token before going live if admin notifications are wanted.
 
 ### For a future session
-- [ ] **Admin UI for price / title / type** — API already accepts them via `updateHouse`, but `public/admin.html` doesn't have inputs for them.
+- [x] **Admin UI for price / title / type** — done. `public/js/admin.js:renderHouses` now has Type dropdown (cabin/room/whole), Price per night input, Title input. Summary line shows display name + price. Blocked-dates/reviews/bookings labels use `houseDisplayName()` helper.
+- [x] **Booking actions** — `POST /api/admin/bookings` (offline paid booking, with overlap check), `POST /api/admin/bookings/:id/mark-paid`, `POST /api/admin/bookings/:id/cancel`, `DELETE /api/admin/bookings/:id`. Store helpers in `src/booking-store.js`: `updateBooking`, `deleteBooking`. New status: `cancelled` (+ filter button + card styling). Cards get action buttons in footer.
+- [x] **Mini stats panel** — above bookings list, computed client-side from `state.bookings`: month revenue, total revenue, count paid/pending/cancelled, upcoming stays.
+- [x] **Site settings** — `data/settings.json` via `src/settings-store.js`. `/api/config` uses settings then falls back to env (`SITE_PHONE`, `SITE_EMAIL`, `MAX_CHANNEL_URL`). Admin tab "Настройки" with sitePhone / sitePhoneSecondary / siteEmail / maxChannelUrl. Second phone on index.html now has `data-site-phone-secondary` + line hides if empty.
+- [x] **Booking-card CSS** — was missing entirely; added `booking-card`, `booking-card__*`, `booking-card__status--{paid,pending,cancelled}`, plus `bookings-toolbar`, `bookings-filter`, `admin-stats`, `admin-stat`, `admin-form--collapsible` styles in `public/css/admin.css`.
+- [x] **Unified header** across `index.html` / `booking.html` / `house.html` — same DOM (logo + nav + MAX + CTA + burger). Non-home pages use `.header--compact` (sticky, cream, ink text). CTA label differs per page ("Забронировать" / "На главную" / "Забронировать"). New `public/js/site-header.js` populates `data-site-*` attrs and wires burger toggle — loaded on booking/house before their own script. Killed `.header--compact .btn--ghost` size override.
 - [ ] **Pending-hold logic** — booking-store's `getBookedRanges` only reserves dates after payment webhook fires. Race window during payment flow. Fix: also reserve `status === 'pending'` for N minutes, expire stale pendings.
 - [ ] **Server-side overlap validation exists for booking creation** but relies on `paid` status only. Same race applies.
 - [ ] **Homepage placement of beach/sea/lake photos** — currently only used in the whole-base gallery. Consider a "Локация" strip on the homepage.

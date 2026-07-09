@@ -44,12 +44,35 @@ export function getAllBookings() {
   return Object.values(load()).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
+export function updateBooking(id, patch) {
+  const all = load();
+  if (!all[id]) return null;
+  const allowed = [
+    'status', 'paidAt', 'paymentId', 'checkIn', 'checkOut',
+    'guestName', 'guestPhone', 'guestEmail', 'guests', 'amount',
+    'houseNumber', 'note', 'cancelledAt',
+  ];
+  for (const key of allowed) {
+    if (key in patch) all[id][key] = patch[key];
+  }
+  save(all);
+  return all[id];
+}
+
+export function deleteBooking(id) {
+  const all = load();
+  if (!all[id]) return false;
+  delete all[id];
+  save(all);
+  return true;
+}
+
 export function getBookedRanges(houseNum) {
   const all = load();
   const num = Number(houseNum);
   return Object.values(all)
     .filter((b) => b.status === 'paid' && Number(b.houseNumber) === num && b.checkIn && b.checkOut)
-    .map((b) => ({ from: b.checkIn, to: b.checkOut, source: 'booking' }));
+    .map((b) => ({ from: b.checkIn, to: b.checkOut, source: 'booking', bookingId: b.id }));
 }
 
 export function bookingToMaxPayload(booking) {

@@ -5,10 +5,21 @@
     "guests": 4,
     "beds": "2 спальни",
     "pricePerNight": 5000,
-    "tags": ["Мангал", "Wi-Fi", "Модульный"],
-    "imgs": ["/images/house-1.jpg", "/images/room-1.jpg", "/images/room-2.jpg", "/images/bathroom.jpg", "/images/bbq.jpg"],
+    "tags": [
+      "Мангал",
+      "Wi-Fi",
+      "Модульный"
+    ],
+    "imgs": [
+      "/images/house-1.jpg",
+      "/images/room-1.jpg",
+      "/images/room-2.jpg",
+      "/images/bathroom.jpg",
+      "/images/bbq.jpg"
+    ],
     "description": "",
-    "amenities": []
+    "amenities": [],
+    "title": ""
   },
   {
     "num": 2,
@@ -16,8 +27,18 @@
     "guests": 4,
     "beds": "2 спальни",
     "pricePerNight": 5000,
-    "tags": ["Мангал", "Wi-Fi", "Уютный"],
-    "imgs": ["/images/house-2.jpg", "/images/room-1.jpg", "/images/room-2.jpg", "/images/bathroom.jpg", "/images/bbq.jpg"],
+    "tags": [
+      "Мангал",
+      "Wi-Fi",
+      "Уютный"
+    ],
+    "imgs": [
+      "/images/house-2.jpg",
+      "/images/room-1.jpg",
+      "/images/room-2.jpg",
+      "/images/bathroom.jpg",
+      "/images/bbq.jpg"
+    ],
     "description": "",
     "amenities": []
   },
@@ -27,10 +48,21 @@
     "guests": 6,
     "beds": "3 спальни",
     "pricePerNight": 5000,
-    "tags": ["Мангал", "Wi-Fi", "Семейный"],
-    "imgs": ["/images/house-3.jpg", "/images/room-1.jpg", "/images/room-2.jpg", "/images/bathroom.jpg", "/images/bbq.jpg"],
+    "tags": [
+      "Мангал",
+      "Wi-Fi",
+      "Семейный"
+    ],
+    "imgs": [
+      "/images/house-3.jpg",
+      "/images/room-1.jpg",
+      "/images/room-2.jpg",
+      "/images/bathroom.jpg",
+      "/images/bbq.jpg"
+    ],
     "description": "",
-    "amenities": []
+    "amenities": [],
+    "title": ""
   },
   {
     "num": 4,
@@ -38,8 +70,18 @@
     "guests": 4,
     "beds": "2 спальни",
     "pricePerNight": 5000,
-    "tags": ["Мангал", "Wi-Fi", "Стандарт"],
-    "imgs": ["/images/house-4.jpg", "/images/room-1.jpg", "/images/room-2.jpg", "/images/bathroom.jpg", "/images/bbq.jpg"],
+    "tags": [
+      "Мангал",
+      "Wi-Fi",
+      "Стандарт"
+    ],
+    "imgs": [
+      "/images/house-4.jpg",
+      "/images/room-1.jpg",
+      "/images/room-2.jpg",
+      "/images/bathroom.jpg",
+      "/images/bbq.jpg"
+    ],
     "description": "",
     "amenities": []
   },
@@ -49,8 +91,18 @@
     "guests": 5,
     "beds": "2 спальни + мансарда",
     "pricePerNight": 5000,
-    "tags": ["Мангал", "Wi-Fi", "Просторный"],
-    "imgs": ["/images/house-5.jpg", "/images/room-1.jpg", "/images/room-2.jpg", "/images/bathroom.jpg", "/images/bbq.jpg"],
+    "tags": [
+      "Мангал",
+      "Wi-Fi",
+      "Просторный"
+    ],
+    "imgs": [
+      "/images/house-5.jpg",
+      "/images/room-1.jpg",
+      "/images/room-2.jpg",
+      "/images/bathroom.jpg",
+      "/images/bbq.jpg"
+    ],
     "description": "",
     "amenities": []
   },
@@ -60,8 +112,18 @@
     "guests": 4,
     "beds": "2 спальни",
     "pricePerNight": 5000,
-    "tags": ["Мангал", "Wi-Fi", "Уютный"],
-    "imgs": ["/images/house-6.jpg", "/images/room-1.jpg", "/images/room-2.jpg", "/images/bathroom.jpg", "/images/bbq.jpg"],
+    "tags": [
+      "Мангал",
+      "Wi-Fi",
+      "Уютный"
+    ],
+    "imgs": [
+      "/images/house-6.jpg",
+      "/images/room-1.jpg",
+      "/images/room-2.jpg",
+      "/images/bathroom.jpg",
+      "/images/bbq.jpg"
+    ],
     "description": "",
     "amenities": []
   },
@@ -71,8 +133,18 @@
     "guests": 6,
     "beds": "3 спальни",
     "pricePerNight": 5000,
-    "tags": ["Мангал", "Wi-Fi", "Семейный"],
-    "imgs": ["/images/house-7.jpg", "/images/room-1.jpg", "/images/room-2.jpg", "/images/bathroom.jpg", "/images/bbq.jpg"],
+    "tags": [
+      "Мангал",
+      "Wi-Fi",
+      "Семейный"
+    ],
+    "imgs": [
+      "/images/house-7.jpg",
+      "/images/room-1.jpg",
+      "/images/room-2.jpg",
+      "/images/bathroom.jpg",
+      "/images/bbq.jpg"
+    ],
     "description": "",
     "amenities": []
   },
@@ -82,8 +154,18 @@
     "guests": 4,
     "beds": "2 спальни",
     "pricePerNight": 5000,
-    "tags": ["Мангал", "Wi-Fi", "Комфорт"],
-    "imgs": ["/images/house-8.jpg", "/images/room-1.jpg", "/images/room-2.jpg", "/images/bathroom.jpg", "/images/bbq.jpg"],
+    "tags": [
+      "Мангал",
+      "Wi-Fi",
+      "Комфорт"
+    ],
+    "imgs": [
+      "/images/house-8.jpg",
+      "/images/room-1.jpg",
+      "/images/room-2.jpg",
+      "/images/bathroom.jpg",
+      "/images/bbq.jpg"
+    ],
     "description": "",
     "amenities": []
   },
@@ -93,8 +175,18 @@
     "guests": 8,
     "beds": "4 спальни",
     "pricePerNight": 5000,
-    "tags": ["Мангал", "Wi-Fi", "Большая компания"],
-    "imgs": ["/images/house-9.jpg", "/images/room-1.jpg", "/images/room-2.jpg", "/images/bathroom.jpg", "/images/bbq.jpg"],
+    "tags": [
+      "Мангал",
+      "Wi-Fi",
+      "Большая компания"
+    ],
+    "imgs": [
+      "/images/house-9.jpg",
+      "/images/room-1.jpg",
+      "/images/room-2.jpg",
+      "/images/bathroom.jpg",
+      "/images/bbq.jpg"
+    ],
     "description": "",
     "amenities": []
   },
@@ -105,7 +197,11 @@
     "guests": 2,
     "beds": "1 комната",
     "pricePerNight": 3500,
-    "tags": ["Wi-Fi", "В главном доме", "Уютный"],
+    "tags": [
+      "Wi-Fi",
+      "В главном доме",
+      "Уютный"
+    ],
     "imgs": [],
     "description": "Номер в главном доме — с доступом к общей мангальной зоне и всей инфраструктуре базы. Фото скоро добавим.",
     "amenities": []
@@ -117,7 +213,11 @@
     "guests": 2,
     "beds": "1 комната",
     "pricePerNight": 3500,
-    "tags": ["Wi-Fi", "В главном доме", "Уютный"],
+    "tags": [
+      "Wi-Fi",
+      "В главном доме",
+      "Уютный"
+    ],
     "imgs": [],
     "description": "Номер в главном доме — с доступом к общей мангальной зоне и всей инфраструктуре базы. Фото скоро добавим.",
     "amenities": []
@@ -129,7 +229,11 @@
     "guests": 2,
     "beds": "1 комната",
     "pricePerNight": 3500,
-    "tags": ["Wi-Fi", "В главном доме", "Уютный"],
+    "tags": [
+      "Wi-Fi",
+      "В главном доме",
+      "Уютный"
+    ],
     "imgs": [],
     "description": "Номер в главном доме — с доступом к общей мангальной зоне и всей инфраструктуре базы. Фото скоро добавим.",
     "amenities": []
@@ -141,8 +245,19 @@
     "guests": 40,
     "beds": "9 домиков + 3 номера в главном доме",
     "pricePerNight": 50000,
-    "tags": ["Вся база", "Мангал", "Wi-Fi", "Большие компании"],
-    "imgs": ["/images/overview.jpg", "/images/bbq.jpg", "/images/beach.jpg", "/images/sea-sunset.jpg", "/images/lake.jpg"],
+    "tags": [
+      "Вся база",
+      "Мангал",
+      "Wi-Fi",
+      "Большие компании"
+    ],
+    "imgs": [
+      "/images/overview.jpg",
+      "/images/bbq.jpg",
+      "/images/beach.jpg",
+      "/images/sea-sunset.jpg",
+      "/images/lake.jpg"
+    ],
     "description": "Вся база отдыха «Жемчужина-Тараная» под ваше мероприятие: 9 модульных домиков + 3 номера в главном доме, мангальная зона, охраняемая территория, пляж Охотского моря в шаговой доступности.",
     "amenities": []
   }

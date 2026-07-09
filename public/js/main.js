@@ -39,6 +39,18 @@ function applySiteConfig(config) {
     phoneEl.href = `tel:${config.sitePhone.replace(/\s/g, '')}`;
   }
 
+  const phone2El = document.querySelector('[data-site-phone-secondary]');
+  const phone2Line = document.querySelector('[data-site-phone-secondary-line]');
+  if (phone2El) {
+    if (config.sitePhoneSecondary) {
+      phone2El.textContent = config.sitePhoneSecondary;
+      phone2El.href = `tel:${config.sitePhoneSecondary.replace(/[^\d+]/g, '')}`;
+      if (phone2Line) phone2Line.hidden = false;
+    } else if (phone2Line) {
+      phone2Line.hidden = true;
+    }
+  }
+
   const emailEl = document.querySelector('[data-site-email]');
   if (emailEl && config.siteEmail) {
     emailEl.textContent = config.siteEmail;

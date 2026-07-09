@@ -4,6 +4,7 @@ const state = {
   reviews: [],
   bookings: [],
   bookingsFilter: 'all',
+  settings: {},
 };
 
 const el = (id) => document.getElementById(id);
@@ -100,22 +101,25 @@ document.querySelectorAll('.admin-tab').forEach((btn) => {
 /* Load all data */
 
 async function loadAll() {
-  const [housesRes, blockedRes, reviewsRes, bookingsRes] = await Promise.all([
+  const [housesRes, blockedRes, reviewsRes, bookingsRes, settingsRes] = await Promise.all([
     api('/api/houses'),
     api('/api/admin/blocked-dates'),
     api('/api/admin/reviews'),
     api('/api/admin/bookings'),
+    api('/api/admin/settings'),
   ]);
   state.houses = housesRes.houses || [];
   state.blocked = blockedRes.ranges || [];
   state.reviews = reviewsRes.reviews || [];
   state.bookings = bookingsRes.bookings || [];
+  state.settings = settingsRes.settings || {};
 
   populateHouseSelects();
   renderHouses();
   renderBlocked();
   renderReviews();
   renderBookings();
+  renderSettings();
 }
 
 /* Bookings */
@@ -150,7 +154,48 @@ function nightsBetween(from, to) {
   return Math.max(0, Math.round((end - start) / 86400000));
 }
 
+const STATUS_LABELS = { paid: 'Оплачено', pending: 'Ожидает оплаты', cancelled: 'Отменена' };
+
+function renderStats() {
+  const wrap = el('admin-stats');
+  if (!wrap) return;
+  const paid = state.bookings.filter((b) => b.status === 'paid');
+  const pending = state.bookings.filter((b) => b.status === 'pending');
+  const cancelled = state.bookings.filter((b) => b.status === 'cancelled');
+
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const monthRevenue = paid
+    .filter((b) => (b.paidAt || b.createdAt || '').startsWith(monthKey))
+    .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const totalRevenue = paid.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+
+  const today = now.toISOString().slice(0, 10);
+  const upcoming = paid.filter((b) => b.checkIn && b.checkIn >= today).length;
+
+  wrap.innerHTML = `
+    <div class="admin-stat">
+      <span class="admin-stat__key">Доход за ${monthKey}</span>
+      <span class="admin-stat__val">${formatPrice(monthRevenue)} ₽</span>
+    </div>
+    <div class="admin-stat">
+      <span class="admin-stat__key">Доход всего</span>
+      <span class="admin-stat__val">${formatPrice(totalRevenue)} ₽</span>
+    </div>
+    <div class="admin-stat">
+      <span class="admin-stat__key">Оплачено · Ждёт · Отменено</span>
+      <span class="admin-stat__val">${paid.length} · ${pending.length} · ${cancelled.length}</span>
+    </div>
+    <div class="admin-stat">
+      <span class="admin-stat__key">Предстоящих заездов</span>
+      <span class="admin-stat__val">${upcoming}</span>
+    </div>
+  `;
+}
+
 function renderBookings() {
+  renderStats();
+
   const wrap = el('admin-bookings-list');
   const countEl = el('bookings-count');
   const filter = state.bookingsFilter;
@@ -167,18 +212,22 @@ function renderBookings() {
   }
 
   wrap.innerHTML = filtered.map((b) => {
-    const paid = b.status === 'paid';
+    const status = b.status || 'pending';
     const nights = nightsBetween(b.checkIn, b.checkOut);
+    const statusLabel = STATUS_LABELS[status] || status;
+    const actions = [];
+    if (status === 'pending') actions.push(`<button type="button" class="admin-link" data-action="mark-paid" data-id="${escapeHtml(b.id)}">Отметить оплаченной</button>`);
+    if (status !== 'cancelled') actions.push(`<button type="button" class="admin-link" data-action="cancel" data-id="${escapeHtml(b.id)}">Отменить</button>`);
+    actions.push(`<button type="button" class="admin-link admin-link--danger" data-action="delete" data-id="${escapeHtml(b.id)}">Удалить</button>`);
+
     return `
-    <article class="booking-card booking-card--${escapeHtml(b.status)}">
+    <article class="booking-card booking-card--${escapeHtml(status)}">
       <header class="booking-card__head">
         <div>
           <span class="booking-card__id">${escapeHtml(b.id)}</span>
-          <h4 class="booking-card__title">Домик № ${b.houseNumber}</h4>
+          <h4 class="booking-card__title">${escapeHtml(houseLabelByNum(b.houseNumber))}</h4>
         </div>
-        <span class="booking-card__status booking-card__status--${escapeHtml(b.status)}">
-          ${paid ? 'Оплачено' : 'Ожидает оплаты'}
-        </span>
+        <span class="booking-card__status booking-card__status--${escapeHtml(status)}">${statusLabel}</span>
       </header>
 
       <div class="booking-card__grid">
@@ -196,17 +245,51 @@ function renderBookings() {
         <div class="booking-card__cell">
           <span class="booking-card__key">Сумма</span>
           <span class="booking-card__val booking-card__val--amount">${formatPrice(b.amount)} ₽</span>
-          ${paid && b.paidAt ? `<span class="booking-card__sub">Оплата: ${formatDateTimeRu(b.paidAt)}</span>` : ''}
+          ${status === 'paid' && b.paidAt ? `<span class="booking-card__sub">Оплата: ${formatDateTimeRu(b.paidAt)}</span>` : ''}
+          ${status === 'cancelled' && b.cancelledAt ? `<span class="booking-card__sub">Отменена: ${formatDateTimeRu(b.cancelledAt)}</span>` : ''}
         </div>
       </div>
 
+      ${b.note ? `<div class="booking-card__note">${escapeHtml(b.note)}</div>` : ''}
+
       <footer class="booking-card__foot">
         <span>Создана: ${formatDateTimeRu(b.createdAt)}</span>
-        ${b.paymentId ? `<span>ЮKassa: ${escapeHtml(b.paymentId)}</span>` : ''}
+        ${b.paymentId ? `<span>Платёж: ${escapeHtml(b.paymentId)}</span>` : ''}
+        <div class="booking-card__actions">${actions.join('')}</div>
       </footer>
     </article>
     `;
   }).join('');
+
+  wrap.querySelectorAll('[data-action]').forEach((btn) => {
+    btn.addEventListener('click', () => handleBookingAction(btn.dataset.action, btn.dataset.id));
+  });
+}
+
+async function handleBookingAction(action, id) {
+  try {
+    if (action === 'mark-paid') {
+      if (!confirm('Отметить бронь как оплаченную? Даты будут заблокированы.')) return;
+      const res = await api(`/api/admin/bookings/${id}/mark-paid`, { method: 'POST' });
+      replaceBooking(id, res.booking);
+    } else if (action === 'cancel') {
+      if (!confirm('Отменить эту бронь?')) return;
+      const res = await api(`/api/admin/bookings/${id}/cancel`, { method: 'POST' });
+      replaceBooking(id, res.booking);
+    } else if (action === 'delete') {
+      if (!confirm('Удалить бронь без возможности восстановления?')) return;
+      await api(`/api/admin/bookings/${id}`, { method: 'DELETE' });
+      state.bookings = state.bookings.filter((b) => b.id !== id);
+    }
+    renderBookings();
+  } catch (err) {
+    alert('Ошибка: ' + err.message);
+  }
+}
+
+function replaceBooking(id, updated) {
+  const idx = state.bookings.findIndex((b) => b.id === id);
+  if (idx !== -1) state.bookings[idx] = updated;
 }
 
 document.getElementById('bookings-filter').addEventListener('click', (e) => {
@@ -218,33 +301,98 @@ document.getElementById('bookings-filter').addEventListener('click', (e) => {
   renderBookings();
 });
 
+el('offline-booking-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const status = el('offline-status');
+  status.textContent = 'Создаём…';
+  const payload = {
+    houseNumber: Number(f.houseNumber.value),
+    checkIn: f.checkIn.value,
+    checkOut: f.checkOut.value,
+    guests: Number(f.guests.value) || 1,
+    guestName: f.guestName.value.trim(),
+    guestPhone: f.guestPhone.value.trim(),
+    guestEmail: f.guestEmail.value.trim(),
+    amount: f.amount.value ? Number(f.amount.value) : undefined,
+    note: f.note.value.trim(),
+  };
+  try {
+    const res = await api('/api/admin/bookings', { method: 'POST', body: payload });
+    state.bookings.unshift(res.booking);
+    status.textContent = 'Создано';
+    setTimeout(() => { status.textContent = ''; }, 2500);
+    f.reset();
+    f.guests.value = 2;
+    el('offline-booking-details').open = false;
+    renderBookings();
+  } catch (err) {
+    status.textContent = 'Ошибка: ' + err.message;
+  }
+});
+
 function populateHouseSelects() {
-  const options = state.houses.map((h) => `<option value="${h.num}">Домик № ${h.num}</option>`).join('');
+  const options = state.houses
+    .map((h) => `<option value="${h.num}">${escapeHtml(houseDisplayName(h))}</option>`)
+    .join('');
   el('blocked-house').innerHTML = options;
   el('review-house').innerHTML = '<option value="">—</option>' + options;
+  const offlineHouse = el('offline-house');
+  if (offlineHouse) offlineHouse.innerHTML = options;
+}
+
+function houseLabelByNum(num) {
+  const h = state.houses.find((x) => Number(x.num) === Number(num));
+  return h ? houseDisplayName(h) : `№ ${num}`;
 }
 
 /* Houses */
 
+const TYPE_LABELS = { cabin: 'Домик', room: 'Гостевой номер', whole: 'Вся база' };
+
+function houseDisplayName(h) {
+  if (h.title) return h.title;
+  if (h.type === 'room') return `Гостевой номер № ${h.num}`;
+  if (h.type === 'whole') return 'Аренда всей базы';
+  return `Домик № ${h.num}`;
+}
+
 function renderHouses() {
   const wrap = el('admin-houses');
-  wrap.innerHTML = state.houses.map((h) => `
+  wrap.innerHTML = state.houses.map((h) => {
+    const type = h.type || 'cabin';
+    const typeOptions = ['cabin', 'room', 'whole']
+      .map((v) => `<option value="${v}"${v === type ? ' selected' : ''}>${TYPE_LABELS[v]}</option>`)
+      .join('');
+    return `
     <details class="admin-house" data-num="${h.num}">
       <summary>
-        <span class="admin-house__name">Домик № ${h.num}</span>
-        <span class="admin-house__meta">до ${h.guests} · ${escapeHtml(h.beds)}</span>
+        <span class="admin-house__name">${escapeHtml(houseDisplayName(h))}</span>
+        <span class="admin-house__meta">${formatPrice(h.pricePerNight)} ₽/ночь · до ${h.guests} · ${escapeHtml(h.beds)}</span>
       </summary>
       <form class="admin-house__form" data-house-form="${h.num}">
         <div class="admin-form__row">
           <label class="booking-form__field">
+            <span>Тип</span>
+            <select name="type">${typeOptions}</select>
+          </label>
+          <label class="booking-form__field">
+            <span>Цена за ночь, ₽</span>
+            <input type="number" name="pricePerNight" min="0" step="100" value="${h.pricePerNight || 0}">
+          </label>
+          <label class="booking-form__field">
             <span>Гостей</span>
-            <input type="number" name="guests" min="1" max="20" value="${h.guests}">
+            <input type="number" name="guests" min="1" max="40" value="${h.guests}">
           </label>
           <label class="booking-form__field">
             <span>Спальни</span>
             <input type="text" name="beds" value="${escapeHtml(h.beds)}">
           </label>
         </div>
+        <label class="booking-form__field">
+          <span>Заголовок (необязательно — если пусто, используется «Домик № N»)</span>
+          <input type="text" name="title" value="${escapeHtml(h.title || '')}" placeholder="Например: Гостевой номер № 1">
+        </label>
         <label class="booking-form__field">
           <span>Теги (через запятую)</span>
           <input type="text" name="tags" value="${escapeHtml((h.tags || []).join(', '))}">
@@ -267,7 +415,8 @@ function renderHouses() {
         </div>
       </form>
     </details>
-  `).join('');
+  `;
+  }).join('');
 
   wrap.querySelectorAll('form[data-house-form]').forEach((form) => {
     form.addEventListener('submit', async (e) => {
@@ -276,6 +425,9 @@ function renderHouses() {
       const status = wrap.querySelector(`[data-status="${num}"]`);
       status.textContent = 'Сохраняем…';
       const payload = {
+        type: form.type.value,
+        title: form.title.value.trim(),
+        pricePerNight: Number(form.pricePerNight.value) || 0,
         guests: Number(form.guests.value),
         beds: form.beds.value.trim(),
         tags: form.tags.value.split(',').map((s) => s.trim()).filter(Boolean),
@@ -313,7 +465,7 @@ function renderBlocked() {
     .sort((a, b) => a[0] - b[0])
     .map(([num, ranges]) => `
       <div class="admin-blocked-group">
-        <h4>Домик № ${num}</h4>
+        <h4>${escapeHtml(houseLabelByNum(num))}</h4>
         <ul>
           ${ranges.map((r) => `
             <li>
@@ -375,7 +527,7 @@ function renderReviews() {
       <article class="admin-review">
         <header>
           <strong>${escapeHtml(r.author)}</strong>
-          <span class="admin-review__meta">${r.date} · ${r.rating}/5${r.houseNum ? ` · Домик № ${r.houseNum}` : ''}</span>
+          <span class="admin-review__meta">${r.date} · ${r.rating}/5${r.houseNum ? ` · ${escapeHtml(houseLabelByNum(r.houseNum))}` : ''}</span>
         </header>
         <p>${escapeHtml(r.text)}</p>
         <footer>
@@ -451,6 +603,38 @@ el('review-form').addEventListener('submit', async (e) => {
     renderReviews();
   } catch (err) {
     alert('Ошибка: ' + err.message);
+  }
+});
+
+/* Settings */
+
+function renderSettings() {
+  const f = el('settings-form');
+  if (!f) return;
+  f.sitePhone.value = state.settings.sitePhone || '';
+  f.sitePhoneSecondary.value = state.settings.sitePhoneSecondary || '';
+  f.siteEmail.value = state.settings.siteEmail || '';
+  f.maxChannelUrl.value = state.settings.maxChannelUrl || '';
+}
+
+el('settings-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const status = el('settings-status');
+  status.textContent = 'Сохраняем…';
+  const payload = {
+    sitePhone: f.sitePhone.value.trim(),
+    sitePhoneSecondary: f.sitePhoneSecondary.value.trim(),
+    siteEmail: f.siteEmail.value.trim(),
+    maxChannelUrl: f.maxChannelUrl.value.trim(),
+  };
+  try {
+    const res = await api('/api/admin/settings', { method: 'PUT', body: payload });
+    state.settings = res.settings;
+    status.textContent = 'Сохранено. Обновите главную, чтобы увидеть изменения.';
+    setTimeout(() => { status.textContent = ''; }, 4000);
+  } catch (err) {
+    status.textContent = 'Ошибка: ' + err.message;
   }
 });
 

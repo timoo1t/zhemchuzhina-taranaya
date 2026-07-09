@@ -44,6 +44,7 @@
           <button type="button" class="admin-tab" data-tab="bookings">Брони</button>
           <button type="button" class="admin-tab" data-tab="blocked">Занятые даты</button>
           <button type="button" class="admin-tab" data-tab="reviews">Отзывы</button>
+          <button type="button" class="admin-tab" data-tab="settings">Настройки</button>
         </nav>
         <button type="button" class="btn btn--ghost" id="admin-logout">Выйти</button>
       </div>
@@ -61,11 +62,64 @@
           <h2 class="admin-panel__title">Брони</h2>
           <p class="admin-panel__lead">Все заявки со статусом оплаты. Оплаченные автоматически блокируют даты в домиках.</p>
 
+          <div id="admin-stats" class="admin-stats"></div>
+
+          <details class="admin-form admin-form--collapsible" id="offline-booking-details">
+            <summary>+ Добавить оффлайн-бронь (нал / перевод)</summary>
+            <form id="offline-booking-form">
+              <div class="admin-form__row">
+                <label class="booking-form__field">
+                  <span>Домик</span>
+                  <select name="houseNumber" id="offline-house" required></select>
+                </label>
+                <label class="booking-form__field">
+                  <span>Заезд</span>
+                  <input type="date" name="checkIn" required>
+                </label>
+                <label class="booking-form__field">
+                  <span>Выезд</span>
+                  <input type="date" name="checkOut" required>
+                </label>
+                <label class="booking-form__field">
+                  <span>Гостей</span>
+                  <input type="number" name="guests" min="1" max="40" value="2">
+                </label>
+              </div>
+              <div class="admin-form__row">
+                <label class="booking-form__field">
+                  <span>Имя гостя</span>
+                  <input type="text" name="guestName" required>
+                </label>
+                <label class="booking-form__field">
+                  <span>Телефон</span>
+                  <input type="tel" name="guestPhone">
+                </label>
+                <label class="booking-form__field">
+                  <span>Email (необязательно)</span>
+                  <input type="email" name="guestEmail">
+                </label>
+                <label class="booking-form__field">
+                  <span>Сумма, ₽ (пусто = автосчёт)</span>
+                  <input type="number" name="amount" min="0" step="100" placeholder="Авто">
+                </label>
+              </div>
+              <label class="booking-form__field">
+                <span>Заметка (необязательно)</span>
+                <input type="text" name="note" placeholder="Оплата налом / Знакомые / …">
+              </label>
+              <div class="admin-form__actions">
+                <button type="submit" class="btn">Создать оплаченную бронь</button>
+                <span class="admin-form__status" id="offline-status"></span>
+              </div>
+            </form>
+          </details>
+
           <div class="bookings-toolbar">
             <div class="bookings-filter" id="bookings-filter">
               <button type="button" class="bookings-filter__btn is-active" data-status="all">Все</button>
               <button type="button" class="bookings-filter__btn" data-status="paid">Оплачены</button>
               <button type="button" class="bookings-filter__btn" data-status="pending">Ожидают оплаты</button>
+              <button type="button" class="bookings-filter__btn" data-status="cancelled">Отменены</button>
             </div>
             <span class="bookings-toolbar__count" id="bookings-count">—</span>
           </div>
@@ -143,6 +197,36 @@
           </form>
 
           <div id="admin-reviews-list" class="admin-reviews-list"></div>
+        </section>
+
+        <section class="admin-panel" data-panel="settings" hidden>
+          <h2 class="admin-panel__title">Настройки сайта</h2>
+          <p class="admin-panel__lead">Контакты и ссылки, которые видят гости на главной, странице домика и в форме брони.</p>
+
+          <form class="admin-form" id="settings-form">
+            <div class="admin-form__row">
+              <label class="booking-form__field">
+                <span>Основной телефон</span>
+                <input type="tel" name="sitePhone" placeholder="+7 (906) 657-77-02">
+              </label>
+              <label class="booking-form__field">
+                <span>Дополнительный телефон</span>
+                <input type="tel" name="sitePhoneSecondary" placeholder="+8-914-758-08-82">
+              </label>
+            </div>
+            <label class="booking-form__field">
+              <span>Email</span>
+              <input type="email" name="siteEmail" placeholder="mail@example.com">
+            </label>
+            <label class="booking-form__field">
+              <span>Ссылка на канал в MAX</span>
+              <input type="url" name="maxChannelUrl" placeholder="https://max.ru/join/…">
+            </label>
+            <div class="admin-form__actions">
+              <button type="submit" class="btn">Сохранить</button>
+              <span class="admin-form__status" id="settings-status"></span>
+            </div>
+          </form>
         </section>
       </div>
     </main>
