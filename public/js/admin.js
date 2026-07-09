@@ -154,7 +154,12 @@ function nightsBetween(from, to) {
   return Math.max(0, Math.round((end - start) / 86400000));
 }
 
-const STATUS_LABELS = { paid: 'Оплачено', pending: 'Ожидает оплаты', cancelled: 'Отменена' };
+const STATUS_LABELS = {
+  paid: 'Оплачено',
+  pending: 'Ожидает оплаты',
+  cancelled: 'Отменена',
+  expired: 'Просрочена',
+};
 
 function renderStats() {
   const wrap = el('admin-stats');
@@ -162,6 +167,7 @@ function renderStats() {
   const paid = state.bookings.filter((b) => b.status === 'paid');
   const pending = state.bookings.filter((b) => b.status === 'pending');
   const cancelled = state.bookings.filter((b) => b.status === 'cancelled');
+  const expired = state.bookings.filter((b) => b.status === 'expired');
 
   const now = new Date();
   const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -183,8 +189,8 @@ function renderStats() {
       <span class="admin-stat__val">${formatPrice(totalRevenue)} ₽</span>
     </div>
     <div class="admin-stat">
-      <span class="admin-stat__key">Оплачено · Ждёт · Отменено</span>
-      <span class="admin-stat__val">${paid.length} · ${pending.length} · ${cancelled.length}</span>
+      <span class="admin-stat__key">Оплачено · Ждёт · Просрочено · Отменено</span>
+      <span class="admin-stat__val">${paid.length} · ${pending.length} · ${expired.length} · ${cancelled.length}</span>
     </div>
     <div class="admin-stat">
       <span class="admin-stat__key">Предстоящих заездов</span>
@@ -216,8 +222,8 @@ function renderBookings() {
     const nights = nightsBetween(b.checkIn, b.checkOut);
     const statusLabel = STATUS_LABELS[status] || status;
     const actions = [];
-    if (status === 'pending') actions.push(`<button type="button" class="admin-link" data-action="mark-paid" data-id="${escapeHtml(b.id)}">Отметить оплаченной</button>`);
-    if (status !== 'cancelled') actions.push(`<button type="button" class="admin-link" data-action="cancel" data-id="${escapeHtml(b.id)}">Отменить</button>`);
+    if (status === 'pending' || status === 'expired') actions.push(`<button type="button" class="admin-link" data-action="mark-paid" data-id="${escapeHtml(b.id)}">Отметить оплаченной</button>`);
+    if (status !== 'cancelled' && status !== 'expired') actions.push(`<button type="button" class="admin-link" data-action="cancel" data-id="${escapeHtml(b.id)}">Отменить</button>`);
     actions.push(`<button type="button" class="admin-link admin-link--danger" data-action="delete" data-id="${escapeHtml(b.id)}">Удалить</button>`);
 
     return `
@@ -247,6 +253,7 @@ function renderBookings() {
           <span class="booking-card__val booking-card__val--amount">${formatPrice(b.amount)} ₽</span>
           ${status === 'paid' && b.paidAt ? `<span class="booking-card__sub">Оплата: ${formatDateTimeRu(b.paidAt)}</span>` : ''}
           ${status === 'cancelled' && b.cancelledAt ? `<span class="booking-card__sub">Отменена: ${formatDateTimeRu(b.cancelledAt)}</span>` : ''}
+          ${status === 'expired' && b.expiredAt ? `<span class="booking-card__sub">Просрочена: ${formatDateTimeRu(b.expiredAt)}</span>` : ''}
         </div>
       </div>
 

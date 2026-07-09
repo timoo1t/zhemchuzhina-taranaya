@@ -3,6 +3,9 @@ import { resolve } from 'node:path';
 
 const FILE = resolve('data', 'bookings.json');
 
+const PENDING_HOLD_MINUTES = Number(process.env.BOOKING_HOLD_MINUTES) || 30;
+const PENDING_HOLD_MS = PENDING_HOLD_MINUTES * 60 * 1000;
+
 function load() {
   if (!existsSync(FILE)) return {};
   try {
@@ -16,6 +19,38 @@ function save(data) {
   const dir = resolve('data');
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   writeFileSync(FILE, JSON.stringify(data, null, 2), 'utf8');
+}
+
+function isPendingActive(b, now = Date.now()) {
+  if (b.status !== 'pending') return false;
+  const createdAt = new Date(b.createdAt).getTime();
+  return Number.isFinite(createdAt) && now - createdAt < PENDING_HOLD_MS;
+}
+
+function expireStalePendings(all) {
+  const now = Date.now();
+  const iso = new Date(now).toISOString();
+  let dirty = false;
+  for (const b of Object.values(all)) {
+    if (b.status !== 'pending') continue;
+    const createdAt = new Date(b.createdAt).getTime();
+    if (Number.isFinite(createdAt) && now - createdAt >= PENDING_HOLD_MS) {
+      b.status = 'expired';
+      b.expiredAt = iso;
+      dirty = true;
+    }
+  }
+  return dirty;
+}
+
+function loadAndSweep() {
+  const all = load();
+  if (expireStalePendings(all)) save(all);
+  return all;
+}
+
+export function getPendingHoldMinutes() {
+  return PENDING_HOLD_MINUTES;
 }
 
 export function createBooking(payload) {
@@ -41,7 +76,7 @@ export function markBookingPaid(id, paymentId) {
 }
 
 export function getAllBookings() {
-  return Object.values(load()).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  return Object.values(loadAndSweep()).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
 export function updateBooking(id, patch) {
@@ -68,11 +103,18 @@ export function deleteBooking(id) {
 }
 
 export function getBookedRanges(houseNum) {
-  const all = load();
+  const all = loadAndSweep();
   const num = Number(houseNum);
+  const now = Date.now();
   return Object.values(all)
-    .filter((b) => b.status === 'paid' && Number(b.houseNumber) === num && b.checkIn && b.checkOut)
-    .map((b) => ({ from: b.checkIn, to: b.checkOut, source: 'booking', bookingId: b.id }));
+    .filter((b) => Number(b.houseNumber) === num && b.checkIn && b.checkOut)
+    .filter((b) => b.status === 'paid' || isPendingActive(b, now))
+    .map((b) => ({
+      from: b.checkIn,
+      to: b.checkOut,
+      source: b.status === 'paid' ? 'booking' : 'hold',
+      bookingId: b.id,
+    }));
 }
 
 export function bookingToMaxPayload(booking) {

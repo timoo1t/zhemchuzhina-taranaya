@@ -529,6 +529,10 @@
   border-left-color: var(--danger);
   opacity: 0.7;
 }
+.booking-card--expired {
+  border-left-color: var(--muted);
+  opacity: 0.7;
+}
 
 .booking-card__head {
   display: flex;
@@ -566,6 +570,7 @@
 .booking-card__status--paid { background: rgba(63, 122, 79, 0.15); color: #3f7a4f; }
 .booking-card__status--pending { background: rgba(168, 107, 71, 0.15); color: var(--copper); }
 .booking-card__status--cancelled { background: rgba(168, 50, 50, 0.15); color: var(--danger); }
+.booking-card__status--expired { background: rgba(110, 118, 111, 0.18); color: var(--muted); }
 
 .booking-card__grid {
   display: grid;
