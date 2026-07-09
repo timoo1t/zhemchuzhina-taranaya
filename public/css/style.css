@@ -1556,7 +1556,8 @@ a { color: inherit; text-decoration: none; }
 }
 
 .booking-form__field input,
-.booking-form__field select {
+.booking-form__field select,
+.booking-form__field textarea {
   padding: 0.85rem 1rem;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1564,18 +1565,28 @@ a { color: inherit; text-decoration: none; }
   color: var(--ink);
   font: inherit;
   font-weight: 400;
+  width: 100%;
   transition:
     border-color var(--dur-fast) var(--ease-smooth),
     background-color var(--dur-fast) var(--ease-smooth);
 }
 
+.booking-form__field textarea {
+  font-family: var(--font);
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.5;
+}
+
 .booking-form__field input:hover,
-.booking-form__field select:hover {
+.booking-form__field select:hover,
+.booking-form__field textarea:hover {
   border-color: var(--sand-dark);
 }
 
 .booking-form__field input:focus,
-.booking-form__field select:focus {
+.booking-form__field select:focus,
+.booking-form__field textarea:focus {
   outline: none;
   border-color: var(--copper);
   background: var(--white);
