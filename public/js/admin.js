@@ -362,6 +362,23 @@ function houseLabelByNum(num) {
 
 const TYPE_LABELS = { cabin: 'Домик', room: 'Гостевой номер', whole: 'Вся база' };
 
+function photoTileHtml(houseNum, url, index) {
+  return `<div class="photo-tile" draggable="true" data-photo-url="${escapeHtml(url)}">
+    <img src="${escapeHtml(url)}" alt="Фото ${index + 1}" loading="lazy">
+    ${index === 0 ? '<span class="photo-tile__badge">Обложка</span>' : ''}
+    <button type="button" class="photo-tile__del" data-photo-delete title="Удалить">×</button>
+  </div>`;
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
+    reader.readAsDataURL(file);
+  });
+}
+
 function houseDisplayName(h) {
   if (h.title) return h.title;
   if (h.type === 'room') return `Гостевой номер № ${h.num}`;
@@ -409,10 +426,18 @@ function renderHouses() {
           <span>Теги (через запятую)</span>
           <input type="text" name="tags" value="${escapeHtml((h.tags || []).join(', '))}">
         </label>
-        <label class="booking-form__field">
-          <span>Фото (один URL на строку, первый — обложка)</span>
-          <textarea name="imgs" rows="4">${escapeHtml((h.imgs || []).join('\n'))}</textarea>
-        </label>
+        <div class="booking-form__field photo-manager" data-photo-manager="${h.num}">
+          <span>Фото (первая — обложка. Перетащите файлы сюда или используйте drag внутри списка для сортировки)</span>
+          <div class="photo-manager__grid" data-photo-grid="${h.num}">
+            ${(h.imgs || []).map((u, i) => photoTileHtml(h.num, u, i)).join('')}
+          </div>
+          <label class="photo-manager__drop" data-photo-drop="${h.num}">
+            <input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden data-photo-input="${h.num}">
+            <span class="photo-manager__drop-text">Перетащите фото сюда или <u>выберите файлы</u></span>
+            <span class="photo-manager__drop-hint">JPEG · PNG · WebP · до 15 МБ каждое</span>
+          </label>
+          <span class="photo-manager__status" data-photo-status="${h.num}"></span>
+        </div>
         <label class="booking-form__field">
           <span>Описание</span>
           <textarea name="description" rows="5">${escapeHtml(h.description || '')}</textarea>
@@ -430,6 +455,8 @@ function renderHouses() {
   `;
   }).join('');
 
+  wrap.querySelectorAll('[data-photo-manager]').forEach((mgr) => bindPhotoManager(mgr));
+
   wrap.querySelectorAll('form[data-house-form]').forEach((form) => {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -443,7 +470,6 @@ function renderHouses() {
         guests: Number(form.guests.value),
         beds: form.beds.value.trim(),
         tags: form.tags.value.split(',').map((s) => s.trim()).filter(Boolean),
-        imgs: form.imgs.value.split(/\n+/).map((s) => s.trim()).filter(Boolean),
         description: form.description.value.trim(),
         amenities: form.amenities.value.split(/\n+/).map((s) => s.trim()).filter(Boolean),
       };
@@ -458,6 +484,129 @@ function renderHouses() {
       }
     });
   });
+}
+
+function bindPhotoManager(mgr) {
+  const num = mgr.dataset.photoManager;
+  const grid = mgr.querySelector(`[data-photo-grid="${num}"]`);
+  const drop = mgr.querySelector(`[data-photo-drop="${num}"]`);
+  const input = mgr.querySelector(`[data-photo-input="${num}"]`);
+  const status = mgr.querySelector(`[data-photo-status="${num}"]`);
+
+  const setStatus = (msg, isError = false) => {
+    status.textContent = msg;
+    status.classList.toggle('is-error', isError);
+    if (msg && !isError) setTimeout(() => { if (status.textContent === msg) status.textContent = ''; }, 3000);
+  };
+
+  input.addEventListener('change', () => uploadFiles([...input.files]));
+
+  drop.addEventListener('dragover', (e) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    drop.classList.add('is-dragover');
+  });
+  drop.addEventListener('dragleave', () => drop.classList.remove('is-dragover'));
+  drop.addEventListener('drop', (e) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    drop.classList.remove('is-dragover');
+    uploadFiles([...e.dataTransfer.files]);
+  });
+
+  grid.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-photo-delete]');
+    if (!btn) return;
+    if (!confirm('Удалить это фото?')) return;
+    const url = btn.closest('.photo-tile').dataset.photoUrl;
+    try {
+      const res = await api(`/api/admin/houses/${num}/photos`, { method: 'DELETE', body: { url } });
+      updateHouseInState(num, res.house);
+      refreshGrid();
+      setStatus('Удалено');
+    } catch (err) {
+      setStatus('Ошибка: ' + err.message, true);
+    }
+  });
+
+  let dragUrl = null;
+  grid.addEventListener('dragstart', (e) => {
+    const tile = e.target.closest('.photo-tile');
+    if (!tile) return;
+    dragUrl = tile.dataset.photoUrl;
+    tile.classList.add('is-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  grid.addEventListener('dragend', () => {
+    grid.querySelectorAll('.is-dragging, .is-drop-target').forEach((el) => el.classList.remove('is-dragging', 'is-drop-target'));
+    dragUrl = null;
+  });
+  grid.addEventListener('dragover', (e) => {
+    if (!dragUrl) return;
+    e.preventDefault();
+    const tile = e.target.closest('.photo-tile');
+    grid.querySelectorAll('.is-drop-target').forEach((el) => el.classList.remove('is-drop-target'));
+    if (tile && tile.dataset.photoUrl !== dragUrl) tile.classList.add('is-drop-target');
+  });
+  grid.addEventListener('drop', async (e) => {
+    if (!dragUrl) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const target = e.target.closest('.photo-tile');
+    if (!target || target.dataset.photoUrl === dragUrl) return;
+
+    const house = state.houses.find((h) => Number(h.num) === Number(num));
+    const imgs = (house?.imgs || []).slice();
+    const from = imgs.indexOf(dragUrl);
+    const to = imgs.indexOf(target.dataset.photoUrl);
+    if (from < 0 || to < 0) return;
+    imgs.splice(from, 1);
+    imgs.splice(to, 0, dragUrl);
+
+    try {
+      const res = await api(`/api/admin/houses/${num}/photos/reorder`, { method: 'PUT', body: { imgs } });
+      updateHouseInState(num, res.house);
+      refreshGrid();
+      setStatus('Порядок сохранён');
+    } catch (err) {
+      setStatus('Ошибка: ' + err.message, true);
+    }
+  });
+
+  async function uploadFiles(files) {
+    if (!files.length) return;
+    setStatus(`Загружаем ${files.length}…`);
+    try {
+      const payload = { files: [] };
+      for (const f of files) {
+        if (!f.type.startsWith('image/')) throw new Error(`${f.name}: не изображение`);
+        const dataUrl = await readFileAsDataUrl(f);
+        payload.files.push({ name: f.name, dataUrl });
+      }
+      const res = await api(`/api/admin/houses/${num}/photos`, { method: 'POST', body: payload });
+      updateHouseInState(num, res.house);
+      refreshGrid();
+      setStatus(`Добавлено: ${files.length}`);
+      input.value = '';
+    } catch (err) {
+      setStatus('Ошибка: ' + err.message, true);
+    }
+  }
+
+  function refreshGrid() {
+    const house = state.houses.find((h) => Number(h.num) === Number(num));
+    const imgs = house?.imgs || [];
+    grid.innerHTML = imgs.map((u, i) => photoTileHtml(num, u, i)).join('');
+  }
+}
+
+function hasFiles(e) {
+  return Array.from(e.dataTransfer?.types || []).includes('Files');
+}
+
+function updateHouseInState(num, house) {
+  const idx = state.houses.findIndex((h) => Number(h.num) === Number(num));
+  if (idx !== -1) state.houses[idx] = house;
 }
 
 /* Blocked dates */

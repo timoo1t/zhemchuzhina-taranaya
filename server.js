@@ -35,6 +35,7 @@ import {
   requireAdmin,
 } from './src/admin-auth.js';
 import { getSettings, updateSettings } from './src/settings-store.js';
+import { savePhoto, deletePhotoFile } from './src/photo-store.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -342,6 +343,51 @@ app.get('/api/admin/status', statusHandler);
 app.put('/api/admin/houses/:num', requireAdmin, (req, res) => {
   const updated = updateHouse(req.params.num, req.body || {});
   if (!updated) return res.status(404).json({ ok: false });
+  res.json({ ok: true, house: updated });
+});
+
+const photoUploadJson = express.json({ limit: '30mb' });
+
+app.post('/api/admin/houses/:num/photos', requireAdmin, photoUploadJson, (req, res) => {
+  const house = getHouse(req.params.num);
+  if (!house) return res.status(404).json({ ok: false });
+
+  const files = Array.isArray(req.body?.files) ? req.body.files : [];
+  if (!files.length) return res.status(400).json({ ok: false, error: 'Нет файлов' });
+  if (files.length > 20) return res.status(400).json({ ok: false, error: 'Максимум 20 файлов за раз' });
+
+  const newUrls = [];
+  try {
+    files.forEach((f, i) => newUrls.push(savePhoto(req.params.num, f.dataUrl, i)));
+  } catch (err) {
+    newUrls.forEach(deletePhotoFile);
+    return res.status(400).json({ ok: false, error: err.message });
+  }
+
+  const updated = updateHouse(req.params.num, { imgs: [...(house.imgs || []), ...newUrls] });
+  res.json({ ok: true, house: updated });
+});
+
+app.delete('/api/admin/houses/:num/photos', requireAdmin, (req, res) => {
+  const house = getHouse(req.params.num);
+  if (!house) return res.status(404).json({ ok: false });
+  const url = req.body?.url;
+  if (!url) return res.status(400).json({ ok: false, error: 'url обязателен' });
+  const nextImgs = (house.imgs || []).filter((u) => u !== url);
+  const updated = updateHouse(req.params.num, { imgs: nextImgs });
+  deletePhotoFile(url);
+  res.json({ ok: true, house: updated });
+});
+
+app.put('/api/admin/houses/:num/photos/reorder', requireAdmin, (req, res) => {
+  const house = getHouse(req.params.num);
+  if (!house) return res.status(404).json({ ok: false });
+  const imgs = Array.isArray(req.body?.imgs) ? req.body.imgs : [];
+  const current = house.imgs || [];
+  if (imgs.length !== current.length || imgs.some((u) => !current.includes(u))) {
+    return res.status(400).json({ ok: false, error: 'Список не совпадает с текущими фото' });
+  }
+  const updated = updateHouse(req.params.num, { imgs });
   res.json({ ok: true, house: updated });
 });
 
