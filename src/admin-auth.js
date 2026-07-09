@@ -8,6 +8,11 @@ function isPasswordConfigured() {
   return typeof process.env.ADMIN_PASSWORD === 'string' && process.env.ADMIN_PASSWORD.length > 0;
 }
 
+function isAuthDisabled() {
+  const v = String(process.env.ADMIN_AUTH_DISABLED || '').toLowerCase();
+  return v === 'true' || v === '1' || v === 'yes';
+}
+
 function parseCookies(req) {
   const header = req.headers.cookie;
   if (!header) return {};
@@ -53,6 +58,9 @@ function clearSessionCookie(res) {
 }
 
 export function loginHandler(req, res) {
+  if (isAuthDisabled()) {
+    return res.json({ ok: true });
+  }
   if (!isPasswordConfigured()) {
     return res.status(503).json({ ok: false, error: 'Админ-панель не настроена (нет ADMIN_PASSWORD)' });
   }
@@ -75,6 +83,9 @@ export function logoutHandler(req, res) {
 }
 
 export function statusHandler(req, res) {
+  if (isAuthDisabled()) {
+    return res.json({ configured: true, authenticated: true, authDisabled: true });
+  }
   if (!isPasswordConfigured()) {
     return res.json({ configured: false, authenticated: false });
   }
@@ -83,6 +94,7 @@ export function statusHandler(req, res) {
 }
 
 export function requireAdmin(req, res, next) {
+  if (isAuthDisabled()) return next();
   if (!isPasswordConfigured()) {
     return res.status(503).json({ ok: false, error: 'Админ-панель не настроена' });
   }
