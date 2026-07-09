@@ -1,0 +1,35 @@
+# Деплой на Render.com: New → Blueprint → подключи репозиторий
+# https://render.com
+
+services:
+  - type: web
+    name: zhemchuzhina-taranaya
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SITE_NAME
+        value: Жемчужина-Тараная
+      - key: NOTIFY_VIA
+        value: vk
+      - key: BOOKING_PRICE_PER_NIGHT
+        value: "5000"
+      - key: MAX_CHANNEL_URL
+        sync: false
+      - key: SITE_PUBLIC_URL
+        sync: false
+      - key: YOOKASSA_SHOP_ID
+        sync: false
+      - key: YOOKASSA_SECRET_KEY
+        sync: false
+      - key: VK_ACCESS_TOKEN
+        sync: false
+      - key: VK_ADMIN_PEER_ID
+        sync: false
+      - key: SITE_PHONE
+        sync: false
+      - key: SITE_EMAIL
+        sync: false

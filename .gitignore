@@ -1,0 +1,13 @@
+node_modules/
+.env
+*.log
+
+# Пользовательские данные — не в репозиторий (PII в bookings.json)
+data/*
+!data/houses.json
+
+# Локальная папка со скачанными фото — деплой использует public/images/
+pictures/
+
+# Локальные заметки ассистента
+.claude/

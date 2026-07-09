@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Жемчужина-Тараная — домики на берегу Охотского моря, село Таранай</title>
+  <meta name="description" content="9 домиков на берегу Охотского моря в селе Таранай, Сахалин. Пляж, мангал, баня. Онлайн-бронирование и оплата картой.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Prata&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="header header--hero" id="header">
+    <div class="container header__inner">
+      <a href="/" class="logo">
+        <span class="logo__main" data-site-name>ЖЕМЧУЖИНА</span>
+        <span class="logo__sub">ТАРАНАЯ · САХАЛИН</span>
+      </a>
+      <nav class="nav">
+        <a href="#domiki">Проживание</a>
+        <a href="#otzyvy">Отзывы</a>
+        <a href="#kak-dobratsya">Как добраться</a>
+        <a href="#kontakty">Контакты</a>
+      </nav>
+      <a href="#" class="btn btn--ghost header__max" data-site-max>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"/></svg>
+        <span>MAX</span>
+      </a>
+      <a href="/booking.html" class="btn btn--book header__cta">Забронировать</a>
+      <button class="burger" aria-label="Меню" id="burger"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <section class="hero-ideadom">
+    <div class="hero-ideadom__bg" aria-hidden="true"></div>
+    <div class="hero-ideadom__shade" aria-hidden="true"></div>
+    <div class="container hero-ideadom__content">
+      <div class="hero-ideadom__copy">
+        <p class="hero-ideadom__eyebrow">Село Таранай · Сахалин</p>
+        <h1 class="hero-ideadom__title">
+          <span class="hero-ideadom__line">Домики на берегу</span>
+          <span class="hero-ideadom__line hero-ideadom__line--accent">Охотского моря</span>
+        </h1>
+        <p class="hero-ideadom__lead">9 домиков в шаговой доступности от воды. Мангал, баня, тишина.</p>
+      </div>
+    </div>
+
+    <div class="search-bar">
+      <div class="container">
+        <form class="search-bar__inner quick-book" id="quick-book" action="/booking.html" method="get">
+          <div class="search-bar__field">
+            <span class="search-bar__field-label">Заезд</span>
+            <div class="field-split">
+              <div class="date-parts" id="qb-checkin-parts">
+                <input type="hidden" name="checkIn" id="qb-checkin">
+                <input type="date" class="date-parts__native" id="qb-checkin-native" tabindex="-1" aria-hidden="true">
+                <input type="number" class="date-parts__box date-parts__day" min="1" max="31" placeholder="01" aria-label="День заезда" inputmode="numeric">
+                <select class="date-parts__box date-parts__month" aria-label="Месяц заезда"></select>
+                <input type="number" class="date-parts__box date-parts__year" min="2025" max="2032" placeholder="2026" aria-label="Год заезда" inputmode="numeric">
+              </div>
+              <button type="button" class="field-split__btn" aria-label="Открыть календарь заезда" data-picker-for="qb-checkin-native">
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="search-bar__field">
+            <span class="search-bar__field-label">Выезд</span>
+            <div class="field-split">
+              <div class="date-parts" id="qb-checkout-parts">
+                <input type="hidden" name="checkOut" id="qb-checkout">
+                <input type="date" class="date-parts__native" id="qb-checkout-native" tabindex="-1" aria-hidden="true">
+                <input type="number" class="date-parts__box date-parts__day" min="1" max="31" placeholder="01" aria-label="День выезда" inputmode="numeric">
+                <select class="date-parts__box date-parts__month" aria-label="Месяц выезда"></select>
+                <input type="number" class="date-parts__box date-parts__year" min="2025" max="2032" placeholder="2026" aria-label="Год выезда" inputmode="numeric">
+              </div>
+              <button type="button" class="field-split__btn" aria-label="Открыть календарь выезда" data-picker-for="qb-checkout-native">
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="search-bar__field">
+            <label for="qb-house">Домик</label>
+            <div class="field-split">
+              <select id="qb-house" name="house" class="field-split__control field-split__control--select">
+              <option value="1">№ 1</option>
+              <option value="2">№ 2</option>
+              <option value="3">№ 3</option>
+              <option value="4">№ 4</option>
+              <option value="5">№ 5</option>
+              <option value="6">№ 6</option>
+              <option value="7">№ 7</option>
+              <option value="8">№ 8</option>
+              <option value="9">№ 9</option>
+            </select>
+              <button type="button" class="field-split__btn" aria-label="Выбрать домик" data-picker-for="qb-house">
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn--find">Найти</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-listings" id="domiki">
+    <div class="container">
+      <div class="section-listings__head">
+        <div>
+          <p class="section-listings__eyebrow">Село Таранай · 45 км от Южно-Сахалинска</p>
+          <h2 class="section-title section-title--left">Наши домики</h2>
+        </div>
+        <p class="section-listings__count">9 домиков · 3 гостевых номера · аренда всей базы</p>
+      </div>
+
+      <div class="listings-grid" id="houses-grid"></div>
+    </div>
+  </section>
+
+  <section class="section-about" id="o-baze">
+    <div class="container about-grid">
+      <div class="about-grid__media">
+        <img src="/images/overview.jpg" alt="Домики базы Жемчужина-Тараная" loading="lazy">
+      </div>
+      <div class="about-grid__text">
+        <h2 class="section-title section-title--left"><span data-site-name>Жемчужина-Тараная</span></h2>
+        <ul class="check-list">
+          <li>Песчаный пляж Охотского моря — в шаговой доступности</li>
+          <li>Охраняемая территория с мангальными зонами</li>
+          <li>Рыбалка, закаты и настоящая тишина</li>
+          <li>Баня на дровах — по записи при заселении</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-amenities" id="territoriya">
+    <div class="container">
+      <h2 class="section-title">На территории</h2>
+      <div class="amenities-grid">
+        <article class="amenity">
+          <span class="amenity__icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="10" r="4"/><path d="M4 22c3-2 5-2 8 0s5 2 8 0 5-2 8 0"/><path d="M4 27c3-2 5-2 8 0s5 2 8 0 5-2 8 0"/></svg>
+          </span>
+          <h3>Пляж</h3><p>Песчаный, в шаговой доступности</p>
+        </article>
+        <article class="amenity">
+          <span class="amenity__icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4c1 4 5 6 5 12a5 5 0 0 1-10 0c0-3 2-4 2-7 1 2 3 3 3 5"/><path d="M8 24h16"/><path d="M10 28h12"/></svg>
+          </span>
+          <h3>Мангал</h3><p>У каждого домика</p>
+        </article>
+        <article class="amenity">
+          <span class="amenity__icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 28V14l10-7 10 7v14"/><path d="M6 20h20"/><path d="M12 14v-2M20 14v-2"/><path d="M14 6c1-1 1-2 0-3M18 6c1-1 1-2 0-3"/></svg>
+          </span>
+          <h3>Баня</h3><p>На дровах, по записи</p>
+        </article>
+        <article class="amenity">
+          <span class="amenity__icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-3 6-3 9 0s6 3 9 0 6-3 9 0"/><path d="M3 19c3-3 6-3 9 0s6 3 9 0 6-3 9 0"/><path d="M3 26c3-3 6-3 9 0s6 3 9 0 6-3 9 0"/></svg>
+          </span>
+          <h3>Море</h3><p>Купание, рыбалка, закаты</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-reviews" id="otzyvy">
+    <div class="container">
+      <h2 class="section-title">Отзывы гостей</h2>
+      <p class="section-lead">Что говорят те, кто уже побывал у нас</p>
+      <div class="reviews-grid" id="reviews-grid"></div>
+
+      <div class="review-form-wrap">
+        <div class="review-form-wrap__head">
+          <h3>Оставить отзыв</h3>
+          <p>Уже были у нас? Поделитесь впечатлением — покажем его здесь после публикации.</p>
+        </div>
+
+        <form class="review-form" id="review-form">
+          <div class="review-form__row">
+            <label class="review-form__field">
+              <span>Имя</span>
+              <input type="text" name="author" required minlength="2" maxlength="60" placeholder="Как вас представить">
+            </label>
+            <label class="review-form__field">
+              <span>Домик (необязательно)</span>
+              <select name="houseNum" id="review-form-house">
+                <option value="">Не указывать</option>
+              </select>
+            </label>
+            <label class="review-form__field review-form__field--rating">
+              <span>Оценка</span>
+              <div class="rating-input" id="review-rating">
+                <input type="hidden" name="rating" value="5">
+                <button type="button" data-star="1" aria-label="1 звезда">★</button>
+                <button type="button" data-star="2" aria-label="2 звезды">★</button>
+                <button type="button" data-star="3" aria-label="3 звезды">★</button>
+                <button type="button" data-star="4" aria-label="4 звезды">★</button>
+                <button type="button" data-star="5" aria-label="5 звёзд">★</button>
+              </div>
+            </label>
+          </div>
+          <label class="review-form__field">
+            <span>Ваш отзыв</span>
+            <textarea name="text" required minlength="20" maxlength="1500" rows="4" placeholder="Что понравилось, что запомнилось, кому бы посоветовали"></textarea>
+          </label>
+          <label class="consent-check">
+            <input type="checkbox" name="consent" required>
+            <span>Согласен(на) на публикацию имени и текста отзыва на сайте и на обработку данных согласно <a href="/policy.html" target="_blank" rel="noopener">политике</a>.</span>
+          </label>
+          <p class="review-form__status" id="review-form-status" hidden></p>
+          <button type="submit" class="btn btn--find">Опубликовать</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-map" id="kak-dobratsya">
+    <div class="container">
+      <h2 class="section-title section-title--left">Как добраться</h2>
+      <div class="map-grid">
+        <div class="map-grid__frame">
+          <iframe
+            id="yandex-map"
+            src="https://yandex.ru/map-widget/v1/?ll=142.240%2C46.560&z=10&pt=142.240%2C46.560"
+            width="100%"
+            height="100%"
+            frameborder="0"
+            allowfullscreen
+            title="Карта — село Таранай"
+          ></iframe>
+        </div>
+        <div class="map-grid__text">
+          <p class="map-directions__eyebrow">Из Южно-Сахалинска</p>
+          <ol class="map-steps">
+            <li><strong>~1 час на машине.</strong> По трассе А-392 в сторону Анивы и далее на юг вдоль берега.</li>
+            <li>После села Таранай — поворот к базе «Жемчужина-Тараная».</li>
+            <li>Заезд с 14:00, выезд до 12:00. Точную дорогу пришлём после подтверждения брони.</li>
+          </ol>
+          <p class="map-note">Замените ссылку карты в <code>index.html</code> на реальный Yandex-эмбед с точкой базы (Yandex Maps → «Поделиться» → «Виджет карты»).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-contacts" id="kontakty">
+    <div class="container contacts-grid">
+      <div>
+        <h2 class="section-title section-title--left section-title--light">Контакты</h2>
+        <p class="contact-line"><a href="tel:+7906657702" data-site-phone>+7 (906) 657-77-02</a></p>
+        <p class="contact-line"><a href="tel:+79147580882">+8-914-758-08-82</a></p>
+        <p class="contact-line"><a href="mailto:mirovi08@gmail.com" data-site-email>mirovi08@gmail.com</a></p>
+        <p class="contact-line">Сахалинская обл., Анивский г.о., с. Таранай, ул. Первомайская, 17а</p>
+        <p class="contact-line"><a href="https://2gis.ru/yuzhnosakhalinsk/search/%D1%82%D0%B0%D1%80%D0%B0%D0%BD%D0%B0%D0%B9%20%D0%B3%D0%BE%D1%81%D1%82%D0%B5%D0%B2%D0%BE%D0%B9%20%D0%B4%D0%BE%D0%BC/firm/70000001052477373/142.436365%2C46.631122?m=142.436365%2C46.631122%2F16.58" target="_blank" rel="noopener noreferrer">Мы на 2ГИС</a></p>
+      </div>
+      <div class="contacts-cta">
+        <p>Забронируйте онлайн — подтверждение придёт на почту сразу после оплаты</p>
+        <a href="/booking.html" class="btn btn--find btn--lg">Забронировать</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer-ideadom">
+    <div class="container footer-ideadom__inner">
+      <span class="footer-ideadom__brand" data-site-name>Жемчужина-Тараная</span>
+      <span>© <span id="year"></span> · <a href="/requisites.html">Реквизиты</a> · <a href="/policy.html">Политика</a> · ЮKassa</span>
+    </div>
+  </footer>
+
+  <script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "baza-otdyha-booking",
+  "version": "1.0.0",
+  "description": "Сайт бронирования базы отдыха с оплатой ЮKassa и уведомлениями (VK / MAX / SMS)",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "mobile": "node scripts/start-mobile.js",
+    "tunnel": "scripts\\pinggy-ssh.bat",
+    "test-bot": "node scripts/test-bot.js",
+    "get-user-id": "node scripts/get-admin-user-id.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@pinggy/pinggy": "^0.4.9",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "nodemailer": "^9.0.3"
+  }
+}

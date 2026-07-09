@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Бронирование — Жемчужина-Тараная</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Prata&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="booking-page">
+  <header class="header header--compact">
+    <div class="container header__inner">
+      <a href="/" class="logo">
+        <span class="logo__main" data-site-name>ЖЕМЧУЖИНА</span>
+        <span class="logo__sub">ТАРАНАЯ · САХАЛИН</span>
+      </a>
+      <a href="/" class="btn btn--ghost">← На главную</a>
+    </div>
+  </header>
+
+  <div class="booking-hero">
+    <div class="container">
+      <h1>Онлайн-бронирование</h1>
+      <p>Забронируйте домик за пару минут. Оплата картой через ЮKassa — подтверждение сразу на почту.</p>
+    </div>
+  </div>
+
+  <main class="booking-main">
+    <div class="container container--narrow">
+      <form class="booking-form" id="booking-form">
+        <div class="booking-form__row">
+          <label class="booking-form__field">
+            <span>Домик</span>
+            <select name="houseNumber" id="houseNumber" required></select>
+          </label>
+          <label class="booking-form__field">
+            <span>Гостей</span>
+            <input type="number" name="guests" min="1" value="2" required>
+          </label>
+        </div>
+        <div class="booking-form__row">
+          <label class="booking-form__field">
+            <span>Заезд</span>
+            <input type="date" name="checkIn" id="checkIn" required>
+          </label>
+          <label class="booking-form__field">
+            <span>Выезд</span>
+            <input type="date" name="checkOut" id="checkOut" required>
+          </label>
+        </div>
+        <label class="booking-form__field">
+          <span>Имя и фамилия</span>
+          <input type="text" name="guestName" required placeholder="Иван Иванов">
+        </label>
+        <label class="booking-form__field">
+          <span>Телефон</span>
+          <input type="tel" name="guestPhone" required placeholder="+7 (906) 657-77-02">
+        </label>
+        <label class="booking-form__field">
+          <span>Email</span>
+          <input type="email" name="guestEmail" required placeholder="mirovi08@gmail.com">
+        </label>
+
+        <div class="booking-form__total" id="booking-total">
+          К оплате: <strong>—</strong>
+        </div>
+
+        <label class="consent-check">
+          <input type="checkbox" name="consent" required>
+          <span>Я согласен(на) на обработку персональных данных согласно <a href="/policy.html" target="_blank" rel="noopener">политике конфиденциальности</a>.</span>
+        </label>
+
+        <p class="booking-form__error" id="booking-error" hidden></p>
+
+        <button type="submit" class="btn btn--find btn--lg booking-form__submit">
+          Перейти к оплате
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <footer class="footer-ideadom">
+    <div class="container footer-ideadom__inner">
+      <span class="footer-ideadom__brand" data-site-name>Жемчужина-Тараная</span>
+      <span><a href="/policy.html">Политика</a> · Оплата через ЮKassa</span>
+    </div>
+  </footer>
+
+  <script src="/js/booking.js"></script>
+</body>
+</html>

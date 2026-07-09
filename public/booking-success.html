@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Оплата прошла — Жемчужина-Тараная</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Prata&display=swap" rel="stylesheet">
+</head>
+<body class="booking-page">
+  <main class="booking-main" style="padding-top:4rem">
+    <div class="container container--narrow booking-success">
+      <h1>Спасибо за бронь!</h1>
+      <p id="success-text">Оплата принята. Подтверждение уже отправлено вам на почту — проверьте входящие и папку «Спам».</p>
+      <p class="booking-success__id" id="booking-id"></p>
+      <a href="/" class="btn btn--book">На главную</a>
+    </div>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const id = params.get('booking');
+    if (id) document.getElementById('booking-id').textContent = 'Номер брони: ' + id;
+  </script>
+</body>
+</html>

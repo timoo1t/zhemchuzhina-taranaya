@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Админ-панель — Жемчужина-Тараная</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Prata&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-page">
+  <div id="admin-boot" class="admin-boot">Загрузка…</div>
+
+  <div id="admin-login" class="admin-login" hidden>
+    <div class="admin-login__card">
+      <h1>Админ-панель</h1>
+      <p class="admin-login__lead">Войдите, чтобы редактировать домики, брони и отзывы.</p>
+      <form id="admin-login-form">
+        <label class="booking-form__field">
+          <span>Пароль</span>
+          <input type="password" name="password" required autocomplete="current-password">
+        </label>
+        <p class="admin-login__error" id="admin-login-error" hidden></p>
+        <button type="submit" class="btn btn--find btn--lg" style="width:100%">Войти</button>
+      </form>
+      <p class="admin-login__hint" id="admin-login-hint" hidden>
+        Админ-панель не настроена. Добавьте <code>ADMIN_PASSWORD</code> в <code>.env</code> и перезапустите сервер.
+      </p>
+    </div>
+  </div>
+
+  <div id="admin-app" hidden>
+    <header class="admin-header">
+      <div class="container admin-header__inner">
+        <a href="/" class="logo">
+          <span class="logo__main">ЖЕМЧУЖИНА</span>
+          <span class="logo__sub">АДМИН-ПАНЕЛЬ</span>
+        </a>
+        <nav class="admin-tabs">
+          <button type="button" class="admin-tab is-active" data-tab="houses">Домики</button>
+          <button type="button" class="admin-tab" data-tab="bookings">Брони</button>
+          <button type="button" class="admin-tab" data-tab="blocked">Занятые даты</button>
+          <button type="button" class="admin-tab" data-tab="reviews">Отзывы</button>
+        </nav>
+        <button type="button" class="btn btn--ghost" id="admin-logout">Выйти</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="container">
+        <section class="admin-panel" data-panel="houses">
+          <h2 class="admin-panel__title">Домики</h2>
+          <p class="admin-panel__lead">Отредактируйте описание, теги, вместимость и список фото каждого домика.</p>
+          <div id="admin-houses"></div>
+        </section>
+
+        <section class="admin-panel" data-panel="bookings" hidden>
+          <h2 class="admin-panel__title">Брони</h2>
+          <p class="admin-panel__lead">Все заявки со статусом оплаты. Оплаченные автоматически блокируют даты в домиках.</p>
+
+          <div class="bookings-toolbar">
+            <div class="bookings-filter" id="bookings-filter">
+              <button type="button" class="bookings-filter__btn is-active" data-status="all">Все</button>
+              <button type="button" class="bookings-filter__btn" data-status="paid">Оплачены</button>
+              <button type="button" class="bookings-filter__btn" data-status="pending">Ожидают оплаты</button>
+            </div>
+            <span class="bookings-toolbar__count" id="bookings-count">—</span>
+          </div>
+
+          <div id="admin-bookings-list" class="admin-bookings-list"></div>
+        </section>
+
+        <section class="admin-panel" data-panel="blocked" hidden>
+          <h2 class="admin-panel__title">Занятые даты</h2>
+          <p class="admin-panel__lead">Добавьте вручную занятые периоды (ремонт, оффлайн-брони). Оплаченные брони блокируются автоматически.</p>
+
+          <form class="admin-form" id="blocked-form">
+            <div class="admin-form__row">
+              <label class="booking-form__field">
+                <span>Домик</span>
+                <select name="houseNum" id="blocked-house" required></select>
+              </label>
+              <label class="booking-form__field">
+                <span>С</span>
+                <input type="date" name="from" required>
+              </label>
+              <label class="booking-form__field">
+                <span>По</span>
+                <input type="date" name="to" required>
+              </label>
+            </div>
+            <label class="booking-form__field">
+              <span>Причина (необязательно)</span>
+              <input type="text" name="reason" placeholder="Оффлайн-бронь / ремонт / …">
+            </label>
+            <button type="submit" class="btn">Добавить</button>
+          </form>
+
+          <div id="admin-blocked-list" class="admin-blocked-list"></div>
+        </section>
+
+        <section class="admin-panel" data-panel="reviews" hidden>
+          <h2 class="admin-panel__title">Отзывы</h2>
+          <p class="admin-panel__lead">Добавляйте отзывы гостей. Они будут показаны на главной странице и на странице соответствующего домика.</p>
+
+          <form class="admin-form" id="review-form">
+            <input type="hidden" name="id">
+            <div class="admin-form__row">
+              <label class="booking-form__field">
+                <span>Автор</span>
+                <input type="text" name="author" required placeholder="Имя, семья, компания">
+              </label>
+              <label class="booking-form__field">
+                <span>Домик (необязательно)</span>
+                <select name="houseNum" id="review-house"><option value="">—</option></select>
+              </label>
+              <label class="booking-form__field">
+                <span>Дата</span>
+                <input type="date" name="date">
+              </label>
+              <label class="booking-form__field">
+                <span>Оценка</span>
+                <select name="rating">
+                  <option value="5">5</option>
+                  <option value="4">4</option>
+                  <option value="3">3</option>
+                  <option value="2">2</option>
+                  <option value="1">1</option>
+                </select>
+              </label>
+            </div>
+            <label class="booking-form__field">
+              <span>Текст отзыва</span>
+              <textarea name="text" rows="4" required></textarea>
+            </label>
+            <div class="admin-form__actions">
+              <button type="submit" class="btn" id="review-submit">Добавить отзыв</button>
+              <button type="button" class="btn btn--ghost" id="review-cancel" hidden>Отменить редактирование</button>
+            </div>
+          </form>
+
+          <div id="admin-reviews-list" class="admin-reviews-list"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

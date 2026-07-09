@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Домик — Жемчужина-Тараная</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Prata&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="booking-page">
+  <header class="header header--compact">
+    <div class="container header__inner">
+      <a href="/" class="logo">
+        <span class="logo__main" data-site-name>ЖЕМЧУЖИНА</span>
+        <span class="logo__sub">ТАРАНАЯ · САХАЛИН</span>
+      </a>
+      <a href="/#domiki" class="btn btn--ghost">← Ко всем домикам</a>
+    </div>
+  </header>
+
+  <main class="house-page">
+    <div class="container">
+      <div class="house-notfound" id="house-notfound" hidden>
+        <h1>Домик не найден</h1>
+        <p>Похоже, такого номера у нас нет. Вернитесь к списку и выберите другой.</p>
+        <a href="/#domiki" class="btn">К списку домиков</a>
+      </div>
+
+      <article class="house-detail" id="house-detail" hidden>
+        <section class="house-gallery" id="house-gallery">
+          <div class="house-gallery__grid" id="gallery-grid"></div>
+          <button type="button" class="house-gallery__all" id="gallery-open-all">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <span id="gallery-all-label">Показать все фото</span>
+          </button>
+          <p class="house-gallery__note" id="gallery-note" hidden>Больше фото скоро появится</p>
+        </section>
+
+        <div class="house-summary">
+          <p class="house-summary__eyebrow">Село Таранай · Сахалин</p>
+          <h1 class="house-summary__title" id="house-title">Домик № —</h1>
+          <p class="house-summary__meta" id="house-meta">— · —</p>
+        </div>
+
+        <div class="house-layout">
+          <div class="house-layout__main">
+            <section class="house-section" id="house-description-section" hidden>
+              <h2>О домике</h2>
+              <p id="house-description-text"></p>
+            </section>
+
+            <section class="house-section" id="house-inside-section" hidden>
+              <h2>Что в домике</h2>
+              <ul class="feature-list" id="house-inside-list"></ul>
+            </section>
+
+            <section class="house-section">
+              <h2>Что рядом</h2>
+              <ul class="feature-list">
+                <li>Песчаный пляж Охотского моря — в шаговой доступности</li>
+                <li>Мангальная зона у домика</li>
+                <li>Баня на дровах — по записи при заселении</li>
+                <li>Охраняемая территория базы</li>
+                <li>Рыбалка и отдых с видом на закаты</li>
+              </ul>
+            </section>
+          </div>
+
+          <aside class="house-widget" id="house-widget">
+            <div class="house-widget__price">
+              <span class="house-widget__price-from">от</span>
+              <span class="house-widget__price-val" id="widget-price">—</span>
+              <span class="house-widget__price-unit">₽ / ночь</span>
+            </div>
+
+            <form class="house-widget__form" id="widget-form">
+              <div class="house-widget__dates">
+                <label class="house-widget__field">
+                  <span>Заезд</span>
+                  <input type="date" name="checkIn" id="widget-checkin" required>
+                </label>
+                <label class="house-widget__field">
+                  <span>Выезд</span>
+                  <input type="date" name="checkOut" id="widget-checkout" required>
+                </label>
+              </div>
+
+              <label class="house-widget__field">
+                <span>Гостей</span>
+                <input type="number" name="guests" id="widget-guests" min="1" value="2" required>
+              </label>
+
+              <div class="house-widget__summary" id="widget-summary">
+                <span>Выберите даты</span>
+              </div>
+
+              <p class="house-widget__warn" id="widget-warn" hidden></p>
+
+              <button type="submit" class="btn btn--find btn--lg house-widget__submit" id="widget-submit">
+                Забронировать
+              </button>
+            </form>
+
+            <p class="house-widget__phone">
+              Нужна помощь? <a href="tel:+7906657702" data-site-phone>+7 (906) 657-77-02</a>
+            </p>
+          </aside>
+        </div>
+
+        <section class="house-section house-section--reviews" id="house-reviews-section" hidden>
+          <h2>Отзывы гостей</h2>
+          <div class="reviews-grid" id="house-reviews-grid"></div>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <div class="lightbox" id="lightbox" hidden aria-hidden="true">
+    <button type="button" class="lightbox__close" id="lightbox-close" aria-label="Закрыть">×</button>
+    <button type="button" class="lightbox__nav lightbox__nav--prev" id="lightbox-prev" aria-label="Предыдущее фото">‹</button>
+    <img class="lightbox__img" id="lightbox-img" src="" alt="">
+    <button type="button" class="lightbox__nav lightbox__nav--next" id="lightbox-next" aria-label="Следующее фото">›</button>
+    <p class="lightbox__counter" id="lightbox-counter"></p>
+  </div>
+
+  <footer class="footer-ideadom">
+    <div class="container footer-ideadom__inner">
+      <span class="footer-ideadom__brand" data-site-name>Жемчужина-Тараная</span>
+      <span>© <span id="year"></span> · <a href="/requisites.html">Реквизиты</a> · <a href="/policy.html">Политика</a> · ЮKassa</span>
+    </div>
+  </footer>
+
+  <script src="/js/house.js"></script>
+</body>
+</html>
