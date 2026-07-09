@@ -5,6 +5,10 @@ const state = {
   bookings: [],
   bookingsFilter: 'all',
   settings: {},
+  calendarMonth: (() => {
+    const d = new Date();
+    return { year: d.getFullYear(), month: d.getMonth() };
+  })(),
 };
 
 const el = (id) => document.getElementById(id);
@@ -120,6 +124,7 @@ async function loadAll() {
   renderReviews();
   renderBookings();
   renderSettings();
+  renderCalendar();
 }
 
 /* Bookings */
@@ -611,6 +616,125 @@ el('review-form').addEventListener('submit', async (e) => {
   } catch (err) {
     alert('Ошибка: ' + err.message);
   }
+});
+
+/* Calendar */
+
+const RU_MONTHS_NOM = [
+  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
+];
+
+function isoDate(year, month, day) {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function computeCalendarStates(year, month) {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const dates = [];
+  for (let d = 1; d <= daysInMonth; d++) dates.push(isoDate(year, month, d));
+
+  const active = state.bookings.filter((b) => b.status === 'paid' || b.status === 'pending');
+  const cells = new Map();
+
+  for (const h of state.houses) {
+    for (const iso of dates) {
+      const b = active.find((x) =>
+        Number(x.houseNumber) === Number(h.num) && x.checkIn <= iso && iso < x.checkOut
+      );
+      if (b) {
+        cells.set(`${h.num}|${iso}`, { state: b.status === 'paid' ? 'paid' : 'hold', label: `${STATUS_LABELS[b.status]}: ${b.guestName || b.id}` });
+        continue;
+      }
+      const m = state.blocked.find((r) =>
+        Number(r.houseNum) === Number(h.num) && r.from <= iso && iso < r.to
+      );
+      if (m) {
+        cells.set(`${h.num}|${iso}`, { state: 'manual', label: m.reason || 'Ручной блок' });
+      }
+    }
+  }
+
+  const whole = state.houses.find((h) => h.type === 'whole');
+  const parts = state.houses.filter((h) => h.type === 'cabin' || h.type === 'room');
+  if (whole) {
+    for (const iso of dates) {
+      const wholeKey = `${whole.num}|${iso}`;
+      if (cells.has(wholeKey)) {
+        for (const p of parts) {
+          const key = `${p.num}|${iso}`;
+          if (!cells.has(key)) cells.set(key, { state: 'cross', label: 'Занято через «Аренда всей базы»' });
+        }
+      } else {
+        const source = parts.find((p) => cells.has(`${p.num}|${iso}`));
+        if (source) cells.set(wholeKey, { state: 'cross', label: `Занято через ${houseDisplayName(source)}` });
+      }
+    }
+  }
+
+  return { dates, cells };
+}
+
+function renderCalendar() {
+  const wrap = el('calendar-grid');
+  const title = el('calendar-title');
+  if (!wrap || !title) return;
+
+  const { year, month } = state.calendarMonth;
+  title.textContent = `${RU_MONTHS_NOM[month]} ${year}`;
+
+  const { dates, cells } = computeCalendarStates(year, month);
+  const today = new Date().toISOString().slice(0, 10);
+  const houses = state.houses.slice().sort((a, b) => Number(a.num) - Number(b.num));
+
+  const cols = `200px repeat(${dates.length}, minmax(30px, 1fr))`;
+
+  const headCells = ['<div class="calendar-grid__head calendar-grid__head--corner">Размещение</div>']
+    .concat(dates.map((iso) => {
+      const day = Number(iso.slice(-2));
+      const dow = new Date(iso + 'T00:00:00').getDay();
+      const weekend = dow === 0 || dow === 6 ? ' calendar-grid__head--weekend' : '';
+      return `<div class="calendar-grid__head${weekend}">${day}</div>`;
+    }))
+    .join('');
+
+  const rowCells = houses.map((h) => {
+    const label = `<div class="calendar-grid__label" title="${escapeHtml(houseDisplayName(h))}">${escapeHtml(houseDisplayName(h))}</div>`;
+    const days = dates.map((iso) => {
+      const cell = cells.get(`${h.num}|${iso}`);
+      const dow = new Date(iso + 'T00:00:00').getDay();
+      const isWeekend = dow === 0 || dow === 6;
+      const classes = ['calendar-cell'];
+      if (isWeekend) classes.push('calendar-cell--weekend');
+      if (iso === today) classes.push('calendar-cell--today');
+      if (cell) classes.push(`calendar-cell--${cell.state}`);
+      const t = cell ? ` title="${escapeHtml(cell.label)}"` : '';
+      return `<div class="${classes.join(' ')}"${t}></div>`;
+    }).join('');
+    return label + days;
+  }).join('');
+
+  wrap.innerHTML = `<div class="calendar-grid" style="grid-template-columns:${cols}">${headCells}${rowCells}</div>`;
+}
+
+el('calendar-prev').addEventListener('click', () => {
+  const { year, month } = state.calendarMonth;
+  const d = new Date(year, month - 1, 1);
+  state.calendarMonth = { year: d.getFullYear(), month: d.getMonth() };
+  renderCalendar();
+});
+
+el('calendar-next').addEventListener('click', () => {
+  const { year, month } = state.calendarMonth;
+  const d = new Date(year, month + 1, 1);
+  state.calendarMonth = { year: d.getFullYear(), month: d.getMonth() };
+  renderCalendar();
+});
+
+el('calendar-today').addEventListener('click', () => {
+  const d = new Date();
+  state.calendarMonth = { year: d.getFullYear(), month: d.getMonth() };
+  renderCalendar();
 });
 
 /* Settings */

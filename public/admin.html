@@ -43,6 +43,7 @@
           <button type="button" class="admin-tab is-active" data-tab="houses">Домики</button>
           <button type="button" class="admin-tab" data-tab="bookings">Брони</button>
           <button type="button" class="admin-tab" data-tab="blocked">Занятые даты</button>
+          <button type="button" class="admin-tab" data-tab="calendar">Календарь</button>
           <button type="button" class="admin-tab" data-tab="reviews">Отзывы</button>
           <button type="button" class="admin-tab" data-tab="settings">Настройки</button>
         </nav>
@@ -155,6 +156,28 @@
           </form>
 
           <div id="admin-blocked-list" class="admin-blocked-list"></div>
+        </section>
+
+        <section class="admin-panel" data-panel="calendar" hidden>
+          <h2 class="admin-panel__title">Календарь занятости</h2>
+          <p class="admin-panel__lead">Один месяц по всем размещениям сразу. Cross-блокировки (аренда всей базы ↔ отдельные домики) отмечены штриховкой.</p>
+
+          <div class="calendar-toolbar">
+            <div class="calendar-nav">
+              <button type="button" class="btn btn--sm" id="calendar-prev">←</button>
+              <span class="calendar-nav__title" id="calendar-title">—</span>
+              <button type="button" class="btn btn--sm" id="calendar-next">→</button>
+              <button type="button" class="btn btn--sm btn--ghost" id="calendar-today">Сегодня</button>
+            </div>
+            <div class="calendar-legend">
+              <span class="calendar-legend__item"><span class="calendar-cell calendar-cell--paid"></span>Оплачено</span>
+              <span class="calendar-legend__item"><span class="calendar-cell calendar-cell--hold"></span>Ожидает</span>
+              <span class="calendar-legend__item"><span class="calendar-cell calendar-cell--manual"></span>Ручной блок</span>
+              <span class="calendar-legend__item"><span class="calendar-cell calendar-cell--cross"></span>Cross-блок</span>
+            </div>
+          </div>
+
+          <div id="calendar-grid" class="calendar-grid-wrap"></div>
         </section>
 
         <section class="admin-panel" data-panel="reviews" hidden>

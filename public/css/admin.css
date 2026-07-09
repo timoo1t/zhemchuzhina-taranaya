@@ -637,6 +637,131 @@
 
 .booking-card__actions .admin-link { margin-left: 0; }
 
+/* Calendar */
+.calendar-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.calendar-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.calendar-nav__title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--ink);
+  min-width: 200px;
+  text-align: center;
+}
+
+.calendar-legend {
+  display: inline-flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.calendar-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.calendar-legend .calendar-cell {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+.calendar-grid-wrap {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+
+.calendar-grid {
+  display: grid;
+  min-width: 100%;
+}
+
+.calendar-grid__label,
+.calendar-grid__head,
+.calendar-cell {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 0.4rem 0.3rem;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.calendar-grid__label {
+  position: sticky;
+  left: 0;
+  background: var(--cream);
+  z-index: 2;
+  text-align: left;
+  font-weight: 500;
+  color: var(--ink);
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  white-space: nowrap;
+  min-width: 190px;
+}
+
+.calendar-grid__head {
+  background: var(--sand);
+  color: var(--ink);
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.calendar-grid__head--corner {
+  z-index: 3;
+  background: var(--sand);
+}
+
+.calendar-grid__head--weekend {
+  background: var(--sand-dark);
+}
+
+.calendar-cell {
+  min-height: 32px;
+  min-width: 30px;
+  background: var(--paper);
+}
+
+.calendar-cell--weekend { background: rgba(232, 220, 194, 0.35); }
+.calendar-cell--today { box-shadow: inset 0 0 0 2px var(--copper); }
+
+.calendar-cell--paid { background: rgba(63, 122, 79, 0.45); }
+.calendar-cell--hold { background: rgba(168, 107, 71, 0.4); }
+.calendar-cell--manual { background: rgba(110, 118, 111, 0.4); }
+.calendar-cell--cross {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(110, 118, 111, 0.15),
+      rgba(110, 118, 111, 0.15) 4px,
+      rgba(110, 118, 111, 0.3) 4px,
+      rgba(110, 118, 111, 0.3) 8px
+    );
+}
+
+.calendar-cell[title] { cursor: help; }
+
 @media (max-width: 768px) {
   .admin-header__inner {
     flex-direction: column;
@@ -650,4 +775,7 @@
   .admin-house__meta { margin-left: 0; }
 
   .booking-card__actions { margin-left: 0; }
+
+  .calendar-grid__label { min-width: 140px; font-size: 0.7rem; }
+  .calendar-cell { min-width: 26px; }
 }
