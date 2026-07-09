@@ -51,7 +51,10 @@ function showLogin() {
 function showApp() {
   el('admin-login').hidden = true;
   el('admin-app').hidden = false;
-  loadAll();
+  loadAll().catch((err) => {
+    console.error('loadAll failed:', err);
+    alert('Ошибка загрузки данных админки: ' + err.message);
+  });
 }
 
 el('admin-login-form').addEventListener('submit', async (e) => {

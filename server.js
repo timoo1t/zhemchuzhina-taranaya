@@ -37,6 +37,7 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 app.set('trust proxy', 1);
+app.set('etag', false);
 
 function publicSiteUrl(req) {
   const fromEnv =
