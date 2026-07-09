@@ -1527,6 +1527,113 @@ a { color: inherit; text-decoration: none; }
   max-width: 580px;
 }
 
+/* Category picker */
+.booking-choose__title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.booking-choose__lead {
+  margin: 0 0 2rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  max-width: 60ch;
+}
+
+.booking-choose__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.booking-category {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  transition:
+    transform var(--dur-fast) var(--ease-smooth),
+    box-shadow var(--dur-fast) var(--ease-smooth),
+    border-color var(--dur-fast) var(--ease-smooth);
+}
+
+.booking-category:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--copper);
+}
+
+.booking-category:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 3px;
+}
+
+.booking-category__img {
+  aspect-ratio: 16 / 10;
+  background-color: var(--sand);
+  background-size: cover;
+  background-position: center;
+}
+
+.booking-category__body {
+  padding: 1.25rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.booking-category__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.booking-category__meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.booking-category__price {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--copper);
+}
+
+/* Back link inside form step */
+.booking-form-wrap { display: block; }
+
+.booking-back {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 0;
+  background: none;
+  border: none;
+  color: var(--copper);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+
+.booking-back:hover { color: var(--copper-hover); }
+
 .booking-form {
   background: var(--cream);
   border: 1px solid var(--border);

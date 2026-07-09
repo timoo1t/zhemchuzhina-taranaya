@@ -41,11 +41,22 @@
   </div>
 
   <main class="booking-main">
-    <div class="container container--narrow">
+    <section class="booking-choose" id="booking-choose">
+      <div class="container">
+        <h2 class="booking-choose__title">Что бронируем?</h2>
+        <p class="booking-choose__lead">Выберите тип размещения — на следующем шаге укажете конкретный вариант и даты.</p>
+        <div class="booking-choose__grid" id="booking-choose-grid">
+          <!-- Заполняется скриптом -->
+        </div>
+      </div>
+    </section>
+
+    <div class="container container--narrow booking-form-wrap" id="booking-form-wrap" hidden>
+      <button type="button" class="booking-back" id="booking-back">← Выбрать другую категорию</button>
       <form class="booking-form" id="booking-form">
         <div class="booking-form__row">
           <label class="booking-form__field">
-            <span>Домик</span>
+            <span>Размещение</span>
             <select name="houseNumber" id="houseNumber" required></select>
           </label>
           <label class="booking-form__field">

@@ -17,7 +17,64 @@ async function loadHouses() {
 }
 
 function houseLabel(h) {
-  return h.title || `Домик № ${h.num}`;
+  if (h.title) return h.title;
+  if (h.type === 'room') return `Гостевой номер № ${h.num}`;
+  if (h.type === 'whole') return 'Аренда всей базы';
+  return `Домик № ${h.num}`;
+}
+
+const CATEGORY_META = {
+  cabin: {
+    title: 'Домики',
+    fallbackImg: '/images/house-1.jpg',
+    priceLabel: 'от {min} ₽/ночь',
+  },
+  room: {
+    title: 'Гостевые номера',
+    fallbackImg: '/images/room-1.jpg',
+    priceLabel: 'от {min} ₽/ночь',
+  },
+  whole: {
+    title: 'Аренда всей базы',
+    fallbackImg: '/images/overview.jpg',
+    priceLabel: '{min} ₽/ночь',
+  },
+};
+
+function categoryHouses(cat) {
+  return HOUSES.filter((h) => (h.type || 'cabin') === cat);
+}
+
+function categoryTileHtml(cat) {
+  const meta = CATEGORY_META[cat];
+  const houses = categoryHouses(cat);
+  if (!houses.length) return '';
+  const prices = houses.map((h) => Number(h.pricePerNight) || defaultPricePerNight);
+  const minPrice = Math.min(...prices);
+  const maxGuests = Math.max(...houses.map((h) => Number(h.guests) || 0));
+  const img = houses[0]?.imgs?.[0] || meta.fallbackImg;
+  const countLine = cat === 'whole'
+    ? `Вся территория, до ${maxGuests} гостей`
+    : `${houses.length} ${cat === 'cabin' ? plural(houses.length, ['вариант', 'варианта', 'вариантов']) : plural(houses.length, ['номер', 'номера', 'номеров'])} · до ${maxGuests} гостей`;
+  const priceLine = meta.priceLabel.replace('{min}', formatPrice(minPrice));
+  return `
+    <button type="button" class="booking-category" data-category="${cat}">
+      <div class="booking-category__img" style="background-image:url('${img}')" aria-hidden="true"></div>
+      <div class="booking-category__body">
+        <h3 class="booking-category__title">${meta.title}</h3>
+        <p class="booking-category__meta">${countLine}</p>
+        <p class="booking-category__price">${priceLine}</p>
+      </div>
+    </button>
+  `;
+}
+
+function plural(n, forms) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return forms[0];
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return forms[1];
+  return forms[2];
 }
 
 function findHouse(num) {
@@ -74,20 +131,65 @@ function onHouseChange() {
   updateTotal();
 }
 
+function populateHouseSelect(filterCategory) {
+  const select = document.getElementById('houseNumber');
+  if (!select) return;
+  const list = filterCategory ? categoryHouses(filterCategory) : HOUSES;
+  select.innerHTML = list
+    .map((h) => `<option value="${h.num}">${houseLabel(h)} — ${formatPrice(Number(h.pricePerNight) || defaultPricePerNight)} ₽/ночь</option>`)
+    .join('');
+  onHouseChange();
+}
+
+function renderCategories() {
+  const grid = document.getElementById('booking-choose-grid');
+  if (!grid) return;
+  grid.innerHTML = ['cabin', 'room', 'whole']
+    .filter((cat) => categoryHouses(cat).length)
+    .map(categoryTileHtml)
+    .join('');
+  grid.querySelectorAll('[data-category]').forEach((btn) => {
+    btn.addEventListener('click', () => showForm(btn.dataset.category));
+  });
+}
+
+function showChoose() {
+  document.getElementById('booking-choose').hidden = false;
+  document.getElementById('booking-form-wrap').hidden = true;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showForm(category, preselectHouseNum) {
+  populateHouseSelect(category);
+  const select = document.getElementById('houseNumber');
+  if (preselectHouseNum && select && [...select.options].some((o) => o.value === String(preselectHouseNum))) {
+    select.value = String(preselectHouseNum);
+    onHouseChange();
+  }
+  document.getElementById('booking-choose').hidden = true;
+  document.getElementById('booking-form-wrap').hidden = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function initChooseFlow() {
+  renderCategories();
+
+  const backBtn = document.getElementById('booking-back');
+  if (backBtn) backBtn.addEventListener('click', showChoose);
+
+  const params = new URLSearchParams(location.search);
+  const preselect = params.get('house');
+  if (preselect) {
+    const h = findHouse(preselect);
+    if (h) return showForm(h.type || 'cabin', preselect);
+  }
+  showChoose();
+}
+
 function initHouseSelect() {
   const select = document.getElementById('houseNumber');
   if (!select) return;
-
-  select.innerHTML = HOUSES
-    .map((h) => `<option value="${h.num}">${houseLabel(h)} — ${formatPrice(Number(h.pricePerNight) || defaultPricePerNight)} ₽/ночь</option>`)
-    .join('');
-
-  const params = new URLSearchParams(location.search);
-  const house = params.get('house');
-  if (house && findHouse(house)) select.value = house;
-
   select.addEventListener('change', onHouseChange);
-  onHouseChange();
 }
 
 function initDates() {
@@ -178,6 +280,7 @@ async function main() {
   initHouseSelect();
   initDates();
   initForm();
+  initChooseFlow();
   updateTotal();
 }
 
