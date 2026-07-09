@@ -55,6 +55,7 @@ Each entry:
 - [x] Listings section subtitle updated to "9 домиков · 3 гостевых номера · аренда всей базы". `#houses-count` span removed (main.js null-checks).
 - [x] Map iframe now uses actual base coordinates (142.436365, 46.631122) + red pin marker; placeholder note replaced with "Открыть на 2ГИС / Открыть на Яндекс.Картах" links.
 - [x] Mobile hero fixes (`@media (max-width: 768px)`): reduced min-height 82vh → 72vh, softened top gradient so image shows through, background positioned at `center 35%`, title clamp lowered.
+- [x] Swapped hero image from cabin-exterior shot to the sunset-over-sea photo (`public/images/hero.jpg` now holds a copy of `sea-sunset.jpg`). Reduced desktop top shade to `rgba(15,31,26,0.12)` so the orange sky reads through.
 - [x] Homepage listings now render as **3 grouped cards** (main.js `renderGroupCard` / `renderSingleCard` / `bindGroupCard`): "Домики" with cabin picker (1–9), "Гостевые номера" with room picker (10–12), "Аренда всей базы" as a single card. Selector swaps cover image, guest count, price, and both link hrefs. Detail-page and per-listing booking flow unchanged.
 
 ### Images
