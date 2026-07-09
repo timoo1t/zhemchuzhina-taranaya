@@ -53,6 +53,9 @@ Each entry:
 - [x] Header buttons + nav aligned on same baseline (padding/font-size unified, SVG icon capped at 14px).
 - [x] Contacts section (`public/index.html`): added second phone `+8-914-758-08-82`, "Мы на 2ГИС" link, full street address.
 - [x] Listings section subtitle updated to "9 домиков · 3 гостевых номера · аренда всей базы". `#houses-count` span removed (main.js null-checks).
+- [x] Map iframe now uses actual base coordinates (142.436365, 46.631122) + red pin marker; placeholder note replaced with "Открыть на 2ГИС / Открыть на Яндекс.Картах" links.
+- [x] Mobile hero fixes (`@media (max-width: 768px)`): reduced min-height 82vh → 72vh, softened top gradient so image shows through, background positioned at `center 35%`, title clamp lowered.
+- [x] Homepage listings now render as **3 grouped cards** (main.js `renderGroupCard` / `renderSingleCard` / `bindGroupCard`): "Домики" with cabin picker (1–9), "Гостевые номера" with room picker (10–12), "Аренда всей базы" as a single card. Selector swaps cover image, guest count, price, and both link hrefs. Detail-page and per-listing booking flow unchanged.
 
 ### Images
 - [x] Renamed useful photos from `pictures/` into `public/images/`: `room-1.jpg`, `room-2.jpg`, `bathroom.jpg`, `bbq.jpg`, `beach.jpg`, `sea-sunset.jpg`, `lake.jpg`.

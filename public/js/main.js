@@ -78,19 +78,48 @@ function escapeHtml(s) {
   ));
 }
 
-function renderHouses() {
-  const grid = document.getElementById('houses-grid');
-  if (!grid) return;
+function renderGroupCard({ groupId, title, meta, items, pickerLabel }) {
+  const first = items[0];
+  const cover = (first.imgs && first.imgs[0]) || '';
+  const price = Number(first.pricePerNight) || pricePerNight;
+  const tags = (first.tags || []).slice(0, 3);
+  const optionLabel = (h) => `${h.title || `Домик № ${h.num}`} · до ${h.guests} гостей`;
 
-  const countEl = document.getElementById('houses-count');
-  if (countEl) countEl.textContent = HOUSES.length;
+  return `
+    <article class="listing-card listing-card--group" data-group="${groupId}">
+      <a href="/house.html?num=${first.num}" class="listing-card__media" data-card-link aria-label="Подробнее">
+        ${cover ? `<img src="${cover}" alt="${escapeHtml(title)}" loading="lazy" data-card-img>` : `<div class="listing-card__media-placeholder">Фото скоро</div>`}
+      </a>
+      <div class="listing-card__body">
+        <div class="listing-card__row">
+          <h3 class="listing-card__name">${escapeHtml(title)}</h3>
+          <span class="listing-card__guests" data-card-guests>до ${first.guests} гостей</span>
+        </div>
+        <p class="listing-card__meta">${escapeHtml(meta)}</p>
+        ${tags.length ? `<ul class="listing-card__tags">${tags.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>` : ''}
+        <label class="listing-card__picker">
+          <span>${escapeHtml(pickerLabel)}</span>
+          <select data-card-select>
+            ${items.map((h) => `<option value="${h.num}">${escapeHtml(optionLabel(h))}</option>`).join('')}
+          </select>
+        </label>
+        <p class="listing-card__price">
+          <span class="listing-card__price-from">от</span>
+          <span class="listing-card__price-num" data-card-price>${formatPrice(price)} ₽</span>
+          <span class="listing-card__price-unit">/ ночь</span>
+        </p>
+        <a href="/house.html?num=${first.num}" class="btn btn--book listing-card__cta" data-card-link>Подробнее</a>
+      </div>
+    </article>
+  `;
+}
 
-  grid.innerHTML = HOUSES.map((h) => {
-    const cover = (h.imgs && h.imgs[0]) || h.img || '';
-    const tags = (h.tags || []).slice(0, 3);
-    const title = h.title || `Домик № ${h.num}`;
-    const price = Number(h.pricePerNight) || pricePerNight;
-    return `
+function renderSingleCard(h) {
+  const cover = (h.imgs && h.imgs[0]) || '';
+  const price = Number(h.pricePerNight) || pricePerNight;
+  const tags = (h.tags || []).slice(0, 3);
+  const title = h.title || `Домик № ${h.num}`;
+  return `
     <a href="/house.html?num=${h.num}" class="listing-card">
       <div class="listing-card__media">
         ${cover ? `<img src="${cover}" alt="${escapeHtml(title)}" loading="lazy">` : `<div class="listing-card__media-placeholder">Фото скоро</div>`}
@@ -109,8 +138,67 @@ function renderHouses() {
         </p>
       </div>
     </a>
-    `;
-  }).join('');
+  `;
+}
+
+function bindGroupCard(card) {
+  const groupId = card.dataset.group;
+  const items = HOUSES.filter((h) => (groupId === 'cabins' ? h.type === 'cabin' : h.type === 'room'));
+  const select = card.querySelector('[data-card-select]');
+  const links = card.querySelectorAll('[data-card-link]');
+  const img = card.querySelector('[data-card-img]');
+  const guests = card.querySelector('[data-card-guests]');
+  const priceEl = card.querySelector('[data-card-price]');
+
+  select?.addEventListener('change', () => {
+    const num = Number(select.value);
+    const h = items.find((x) => Number(x.num) === num);
+    if (!h) return;
+
+    links.forEach((a) => { a.href = `/house.html?num=${num}`; });
+    if (img && h.imgs && h.imgs[0]) img.src = h.imgs[0];
+    if (guests) guests.textContent = `до ${h.guests} гостей`;
+    if (priceEl) priceEl.textContent = `${formatPrice(Number(h.pricePerNight) || pricePerNight)} ₽`;
+  });
+}
+
+function renderHouses() {
+  const grid = document.getElementById('houses-grid');
+  if (!grid) return;
+
+  const countEl = document.getElementById('houses-count');
+  if (countEl) countEl.textContent = HOUSES.length;
+
+  const cabins = HOUSES.filter((h) => h.type === 'cabin');
+  const rooms = HOUSES.filter((h) => h.type === 'room');
+  const whole = HOUSES.find((h) => h.type === 'whole');
+
+  const cards = [];
+
+  if (cabins.length) {
+    cards.push(renderGroupCard({
+      groupId: 'cabins',
+      title: 'Домики',
+      meta: `${cabins.length} модульных домиков у моря`,
+      items: cabins,
+      pickerLabel: 'Выберите домик',
+    }));
+  }
+
+  if (rooms.length) {
+    cards.push(renderGroupCard({
+      groupId: 'rooms',
+      title: 'Гостевые номера',
+      meta: `${rooms.length} номера в главном доме`,
+      items: rooms,
+      pickerLabel: 'Выберите номер',
+    }));
+  }
+
+  if (whole) cards.push(renderSingleCard(whole));
+
+  grid.innerHTML = cards.join('');
+  grid.querySelectorAll('[data-group]').forEach(bindGroupCard);
 }
 
 function initReviewForm() {
