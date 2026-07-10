@@ -51,6 +51,14 @@
       </div>
     </section>
 
+    <div class="listing-modal" id="listing-modal" hidden aria-modal="true" role="dialog">
+      <button type="button" class="listing-modal__backdrop" data-modal-close aria-label="Закрыть"></button>
+      <div class="listing-modal__panel">
+        <button type="button" class="listing-modal__close" data-modal-close aria-label="Закрыть">×</button>
+        <div class="listing-modal__body" id="listing-modal-body"></div>
+      </div>
+    </div>
+
     <div class="container container--narrow booking-form-wrap" id="booking-form-wrap" hidden>
       <button type="button" class="booking-back" id="booking-back">← Выбрать другую категорию</button>
       <form class="booking-form" id="booking-form">

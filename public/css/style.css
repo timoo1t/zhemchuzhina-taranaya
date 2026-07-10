@@ -1615,6 +1615,196 @@ a { color: inherit; text-decoration: none; }
   color: var(--copper);
 }
 
+/* Listing modal */
+body.modal-open { overflow: hidden; }
+
+.listing-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: modalFade var(--dur-fast) var(--ease-smooth);
+}
+
+@keyframes modalFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.listing-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 31, 26, 0.7);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.listing-modal__panel {
+  position: relative;
+  width: min(900px, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  background: var(--paper);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 2rem 2rem 2.25rem;
+}
+
+.listing-modal__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(15, 31, 26, 0.08);
+  border: none;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background-color var(--dur-fast) var(--ease-smooth);
+}
+
+.listing-modal__close:hover { background: rgba(15, 31, 26, 0.16); }
+
+.listing-modal__head {
+  margin-bottom: 1.25rem;
+}
+
+.listing-modal__eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.listing-modal__title {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.4vw, 1.75rem);
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.listing-modal__specs {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.listing-modal__price {
+  color: var(--copper);
+  font-weight: 600;
+}
+
+.listing-modal__gallery {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  margin: 1.25rem -0.5rem 1.5rem;
+  padding: 0 0.5rem 0.5rem;
+  scrollbar-width: thin;
+}
+
+.listing-modal__slide {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  width: min(75%, 600px);
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--sand);
+}
+
+.listing-modal__slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.listing-modal__desc {
+  margin: 0 0 1.25rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.listing-modal__picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 0.9rem 1rem;
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.listing-modal__picker-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.listing-modal__picker-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.listing-modal__num {
+  min-width: 40px;
+  padding: 0.5rem 0.8rem;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-smooth),
+    border-color var(--dur-fast) var(--ease-smooth),
+    color var(--dur-fast) var(--ease-smooth);
+}
+
+.listing-modal__num:hover { border-color: var(--copper); }
+
+.listing-modal__num.is-active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.listing-modal__actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.listing-modal__actions .btn { flex: 1 1 auto; min-width: 160px; }
+
+@media (max-width: 640px) {
+  .listing-modal__panel { padding: 1.5rem 1rem 1.75rem; }
+  .listing-modal__slide { width: 90%; }
+}
+
 /* Back link inside form step */
 .booking-back {
   display: inline-block;

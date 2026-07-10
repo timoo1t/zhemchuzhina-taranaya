@@ -149,7 +149,97 @@ function renderCategories() {
     .map(categoryTileHtml)
     .join('');
   grid.querySelectorAll('[data-category]').forEach((btn) => {
-    btn.addEventListener('click', () => showForm(btn.dataset.category));
+    btn.addEventListener('click', () => openListingModal(btn.dataset.category));
+  });
+}
+
+let modalState = { category: null, houseNum: null };
+
+function openListingModal(category) {
+  const houses = categoryHouses(category);
+  if (!houses.length) return;
+  modalState = { category, houseNum: houses[0].num };
+  renderListingModal();
+  const modal = document.getElementById('listing-modal');
+  modal.hidden = false;
+  document.body.classList.add('modal-open');
+}
+
+function closeListingModal() {
+  document.getElementById('listing-modal').hidden = true;
+  document.body.classList.remove('modal-open');
+}
+
+function selectModalHouse(num) {
+  modalState.houseNum = Number(num);
+  renderListingModal();
+}
+
+function renderListingModal() {
+  const body = document.getElementById('listing-modal-body');
+  if (!body) return;
+  const { category, houseNum } = modalState;
+  const houses = categoryHouses(category);
+  const current = houses.find((h) => Number(h.num) === Number(houseNum)) || houses[0];
+  const meta = CATEGORY_META[category];
+
+  const rawImgs = current.imgs && current.imgs.length ? current.imgs : (houses[0]?.imgs || []);
+  const imgs = rawImgs.length ? rawImgs : [meta.fallbackImg];
+
+  const price = Number(current.pricePerNight) || defaultPricePerNight;
+  const specs = [
+    `до ${current.guests || 1} гостей`,
+    current.beds,
+  ].filter(Boolean).join(' · ');
+
+  const showPicker = houses.length > 1;
+  const pickerHtml = showPicker ? `
+    <div class="listing-modal__picker">
+      <span class="listing-modal__picker-label">${category === 'cabin' ? 'Выберите домик' : 'Выберите номер'}:</span>
+      <div class="listing-modal__picker-btns">
+        ${houses.map((h) => `<button type="button" class="listing-modal__num${Number(h.num) === Number(current.num) ? ' is-active' : ''}" data-modal-house="${h.num}">${h.num}</button>`).join('')}
+      </div>
+    </div>` : '';
+
+  body.innerHTML = `
+    <header class="listing-modal__head">
+      <p class="listing-modal__eyebrow">${meta.title}</p>
+      <h2 class="listing-modal__title">${houseLabel(current)}</h2>
+      <p class="listing-modal__specs">${specs} · <span class="listing-modal__price">${formatPrice(price)} ₽/ночь</span></p>
+    </header>
+
+    <div class="listing-modal__gallery" role="list">
+      ${imgs.map((u, i) => `<div class="listing-modal__slide" role="listitem"><img src="${u}" alt="${houseLabel(current)} — фото ${i + 1}" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`).join('')}
+    </div>
+
+    ${current.description ? `<p class="listing-modal__desc">${current.description}</p>` : ''}
+
+    ${pickerHtml}
+
+    <div class="listing-modal__actions">
+      <a href="/house.html?num=${current.num}" class="btn btn--ghost">Подробнее</a>
+      <button type="button" class="btn btn--find btn--lg" data-modal-book>Забронировать</button>
+    </div>
+  `;
+
+  body.querySelectorAll('[data-modal-house]').forEach((btn) => {
+    btn.addEventListener('click', () => selectModalHouse(btn.dataset.modalHouse));
+  });
+  const bookBtn = body.querySelector('[data-modal-book]');
+  if (bookBtn) bookBtn.addEventListener('click', () => {
+    closeListingModal();
+    showForm(category, current.num);
+  });
+}
+
+function initModal() {
+  const modal = document.getElementById('listing-modal');
+  if (!modal) return;
+  modal.addEventListener('click', (e) => {
+    if (e.target.matches('[data-modal-close]')) closeListingModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.hidden) closeListingModal();
   });
 }
 
@@ -281,6 +371,7 @@ async function main() {
   initDates();
   initForm();
   initChooseFlow();
+  initModal();
   updateTotal();
 }
 
