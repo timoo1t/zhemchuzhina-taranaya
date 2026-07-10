@@ -1693,6 +1693,8 @@ body.modal-open { overflow: hidden; }
   animation: modalFade var(--dur-fast) var(--ease-smooth);
 }
 
+.listing-modal[hidden] { display: none; }
+
 @keyframes modalFade {
   from { opacity: 0; }
   to { opacity: 1; }
