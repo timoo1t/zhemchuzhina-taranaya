@@ -1616,8 +1616,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* Back link inside form step */
-.booking-form-wrap { display: block; }
-
 .booking-back {
   display: inline-block;
   margin-bottom: 1.25rem;
