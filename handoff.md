@@ -109,9 +109,9 @@ Each entry:
 - [x] **Photo drag-and-drop** — `src/photo-store.js` writes base64 uploads to `public/images/uploads/` (path in .gitignore). Endpoints: `POST /api/admin/houses/:num/photos` (batch, 30mb JSON limit), `DELETE /api/admin/houses/:num/photos` (also removes file if under `/images/uploads/`), `PUT /api/admin/houses/:num/photos/reorder`. Admin form textarea replaced with thumbnail grid + drop zone; drag-to-reorder + click-to-delete. First tile shows «Обложка» badge. Form save no longer sends imgs — managed via photo endpoints.
 - [x] **Calendar view** — new admin tab «Календарь». One-month grid, rows = houses (sorted by num), cols = days. Cell states: paid (green), hold (copper), manual block (grey), cross-block (hatched). Cross-block rules mirrored client-side (whole ↔ cabin/room). Prev/next/today nav. Sticky first column + first row for horizontal scroll on mobile.
 - [x] **Pending-hold logic** — `src/booking-store.js` now holds `pending` bookings for `BOOKING_HOLD_MINUTES` (env, default 30). `loadAndSweep()` lazily marks stale pendings as `expired` on read. `getBookedRanges` returns active pendings with `source: 'hold'`. New `expired` status wired into admin: filter button, stat counter, muted card style, mark-paid + delete still allowed.
-- [ ] **Homepage placement of beach/sea/lake photos** — currently only used in the whole-base gallery. Consider a "Локация" strip on the homepage.
-- [ ] **Guests input on house detail widget** — has no `max` attribute; frontend doesn't clamp to `house.guests`. `booking.js` clamps on the booking form only.
-- [ ] **`houses-count` element removed** — if any other code touches it (grep clean), safe to ignore.
+- [x] **Homepage «Локация» strip** — new `.section-location` between amenities and reviews. 3 photos (sea-sunset wide, beach, lake) with caption overlay. Added to reveal-on-scroll targets in main.js.
+- [x] **Guests input on house widget** — `initWidget(house)` now sets `max` from `house.guests` and clamps on `change`.
+- [x] **`houses-count`** — grep clean; only main.js uses it with null-check. Fine to leave.
 
 ---
 

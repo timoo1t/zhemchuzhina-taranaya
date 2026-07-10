@@ -231,10 +231,22 @@ function updateWidgetSummary() {
   submit.disabled = Boolean(conflict);
 }
 
-function initWidget(houseNum) {
+function initWidget(house) {
+  const houseNum = house.num;
   const form = document.getElementById('widget-form');
   const checkIn = document.getElementById('widget-checkin');
   const checkOut = document.getElementById('widget-checkout');
+  const guestsInput = document.getElementById('widget-guests');
+
+  if (guestsInput && house.guests) {
+    guestsInput.max = String(house.guests);
+    if (Number(guestsInput.value) > house.guests) guestsInput.value = String(house.guests);
+    guestsInput.addEventListener('change', () => {
+      const v = Number(guestsInput.value) || 1;
+      if (v > house.guests) guestsInput.value = String(house.guests);
+      if (v < 1) guestsInput.value = '1';
+    });
+  }
 
   const today = new Date();
   const tomorrow = new Date(today);
@@ -362,7 +374,7 @@ async function main() {
   blockedRanges = availabilityResult.status === 'fulfilled' ? availabilityResult.value : [];
 
   renderHouse(house);
-  initWidget(house.num);
+  initWidget(house);
 
   const reviews = reviewsResult.status === 'fulfilled' ? reviewsResult.value : [];
   renderReviews(reviews, house.num);

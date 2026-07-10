@@ -483,7 +483,7 @@ function initReveal() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   const targets = document.querySelectorAll(
-    '.section-listings, .section-about, .section-amenities, .section-reviews, .section-map, .section-contacts'
+    '.section-listings, .section-about, .section-amenities, .section-location, .section-reviews, .section-map, .section-contacts'
   );
 
   targets.forEach((el) => el.classList.add('reveal'));
