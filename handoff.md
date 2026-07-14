@@ -13,20 +13,32 @@ Self-orientation file for the assistant. Read this **first** when returning to t
 ## Key files
 | Path | Purpose |
 |------|---------|
-| `server.js` | Express server, all API endpoints, YooKassa integration, pricing + cross-block logic |
-| `src/booking-store.js` | JSON persistence for bookings, `getBookedRanges` (paid-only) |
+| `server.js` | Express server, all API endpoints, YooKassa integration, pricing + cross-block logic, security headers, per-page SSR routes for OG/canonical, `/robots.txt`, `/sitemap.xml` |
+| `src/booking-store.js` | JSON persistence for bookings, `getBookedRanges` (paid + active pendings) |
 | `src/content-store.js` | JSON persistence for houses, blocked-dates, reviews |
+| `src/admin-auth.js` | Cookie-based admin sessions (persisted to `data/sessions.json`), per-IP login rate-limit, timing-safe password compare |
+| `src/yookassa-client.js` | YooKassa REST wrapper — `createPayment` + `getPayment` (used by webhook to re-verify) |
+| `src/yookassa-webhook.js` | CIDR check for YooKassa source IPs (v4 CIDRs + `2a02:5180::/32`) — used by `/api/yookassa/webhook` |
+| `src/html-render.js` | Template helper: cached file read + `{{PLACEHOLDER}}` substitution with HTML escape (use `_RAW` suffix to skip escape, e.g. `JSONLD_RAW`) |
+| `src/settings-store.js` | `data/settings.json` — site phones/email/MAX URL, edited via admin |
+| `src/photo-store.js` | Handles admin base64 photo uploads → `public/images/uploads/` |
 | `data/houses.json` | Source of truth for all listings (cabins, rooms, whole-base) |
 | `data/blocked-dates.json` | Manual admin blocks |
 | `data/bookings.json` | Bookings with status |
-| `public/index.html` | Homepage — hero, listings grid, about, contacts |
-| `public/house.html` | Listing detail + booking widget |
-| `public/booking.html` | Booking form + payment start |
+| `data/reviews.json` | Guest reviews |
+| `data/sessions.json` | Persisted admin session tokens (gitignored via `data/*`) |
+| `data/settings.json` | Editable site settings |
+| `public/index.html` | Homepage — hero, listings grid, about, contacts. Server-rendered OG/JSON-LD |
+| `public/house.html` | Listing detail + booking widget. Server-rendered per `?num=` |
+| `public/booking.html` | Booking form + payment start. Includes hidden honeypot input |
+| `public/policy.html` / `public/requisites.html` / `public/booking-success.html` | Static pages, `noindex` |
+| `public/favicon.svg` | Inline SVG favicon (жемчужина) |
 | `public/js/main.js` | Homepage rendering |
 | `public/js/house.js` | Detail page + widget + availability |
 | `public/js/booking.js` | Booking form logic |
+| `public/js/policy.js` / `public/js/booking-success.js` | Tiny helper scripts extracted from inline `<script>` for strict CSP |
 | `public/css/style.css` | All styles |
-| `.env` / `.env.example` | Env vars — includes YooKassa keys, phones, MAX channel URL |
+| `.env` / `.env.example` | Env vars — includes YooKassa keys, phones, MAX channel URL, security knobs |
 | `render.yaml` | Render.com deploy blueprint |
 
 ## Data model (`data/houses.json`)
@@ -87,6 +99,33 @@ Each entry:
 ### Guest room photos
 - [x] Rooms 10, 11, 12 have `imgs: []` — grid shows "Фото скоро" placeholder. User confirmed the interior photos we had were cabin interiors, not the main-house rooms.
 
+### Security hardening (session 2026-07-14)
+- [x] **YooKassa webhook** (`server.js` + `src/yookassa-webhook.js` + `src/yookassa-client.js`):
+  - Reject request if source IP not in YooKassa's published ranges: `185.71.76.0/27`, `185.71.77.0/27`, `77.75.153.0/25`, `77.75.154.128/25`, `77.75.156.11`, `77.75.156.35`, `2a02:5180::/32`. Handles `::ffff:` v4-mapped v6 too.
+  - Re-fetch payment via `YooKassaClient.getPayment(id)` and verify `status === 'succeeded'`, `paid === true`, `metadata.bookingId` matches, and `amount.value` matches booking's stored amount (±0.01 RUB). Only then `markBookingPaid`.
+  - Bypass IP check with `YOOKASSA_WEBHOOK_SKIP_IP_CHECK=true` for local debugging (never set in prod).
+- [x] **Booking spam** (`server.js`):
+  - Honeypot hidden input `<input name="website">` in `booking.html` (positioned off-screen). Server rejects `400` if filled.
+  - Per-IP rate limit on `/api/booking/pay`: 5 pending bookings per 30 min → `429`. Overridable via `BOOKING_RATE_LIMIT` env.
+- [x] **Admin login** (`src/admin-auth.js`):
+  - Sessions persisted to `data/sessions.json` (loaded once at boot, rewritten on login/logout/prune). Survives restart and multi-instance deploys.
+  - Per-IP rate-limit on `/api/admin/login`: after `ADMIN_LOGIN_MAX_ATTEMPTS` (default 5) failed attempts within `ADMIN_LOGIN_WINDOW_MINUTES` (default 15) the IP is locked out for `ADMIN_LOGIN_LOCKOUT_MINUTES` (default 15) → `429`. Successful login clears the counter.
+  - Password comparison via `crypto.timingSafeEqual` with length-safe branch (closes timing side-channel).
+- [x] **HTTP security headers** (middleware in `server.js`):
+  - `Content-Security-Policy`: `script-src 'self'` (no inline JS anywhere — extracted the last 2 inline scripts into `/js/policy.js` and `/js/booking-success.js`). `style-src 'self' 'unsafe-inline' fonts.googleapis.com` (unsafe-inline kept because `main.js`/`house.js` set `style="background-image:..."` via `innerHTML`). `frame-src` limited to `yandex.ru` for the map. `frame-ancestors 'none'` blocks clickjacking. `form-action 'self'`, `object-src 'none'`, `base-uri 'self'`, `upgrade-insecure-requests`.
+  - `Strict-Transport-Security: max-age=31536000; includeSubDomains` — set **only** when `NODE_ENV=production`.
+  - `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`.
+
+### SEO + social previews (session 2026-07-14)
+- [x] **Per-page SSR routes** in `server.js` before `express.static`: `/` + `/index.html`, `/booking.html`, `/policy.html`, `/requisites.html`, `/house.html`. Each uses `renderHtml()` from `src/html-render.js` to substitute `{{CANONICAL}}`, `{{OG_URL}}`, `{{OG_IMAGE}}` etc. Any unfilled placeholder is stripped so template artifacts never leak. Absolute URLs derived from `SITE_PUBLIC_URL` (env) → `RENDER_EXTERNAL_URL` → request host.
+- [x] **Open Graph + Twitter Card + canonical + favicon** added to `index.html`, `booking.html`, `house.html`, `policy.html`, `requisites.html`, `booking-success.html`. Homepage OG image is `/images/sea-sunset.jpg`.
+- [x] **`house.html` is now dynamic**: title/description/`og:image` pulled from the listing by `?num=`. Unknown `?num=` gets `noindex,follow` + canonical → `/`.
+- [x] **JSON-LD `LodgingBusiness`** on `index.html`: address, geo (46.631122, 142.436365), phones from settings, email, priceRange (min–max from `houses.json`), all photos absolute, `AggregateRating` computed from `reviews.json`, `hasMap` → Yandex, `checkinTime: 14:00`, `checkoutTime: 12:00`.
+- [x] **`/robots.txt`** — dynamic: `Allow: /`, `Disallow: /admin.html`, `Disallow: /api/`, `Sitemap: <base>/sitemap.xml`.
+- [x] **`/sitemap.xml`** — dynamic: `/`, `/booking.html`, `/house.html?num=X` for every entry in `houses.json`, `/policy.html`, `/requisites.html`. `<lastmod>` from `houses.json` mtime.
+- [x] **`noindex` on non-SEO pages**: `policy.html`, `requisites.html`, `booking-success.html`.
+- [x] **Favicon**: `public/favicon.svg` (inline SVG жемчужина).
+
 ---
 
 ## ⛔ Not done / open loops
@@ -122,19 +161,30 @@ The project ships with `render.yaml` — it's a Render Blueprint.
 1. **Push the code to a git repo** (GitHub / GitLab). Nothing in `.env` should be committed — verify `.gitignore` covers it.
 2. On Render dashboard: **New → Blueprint → connect the repo**. Render reads `render.yaml` and creates the web service.
 3. In the Render service's **Environment** tab, fill values for the vars marked `sync: false`:
-   - `SITE_PUBLIC_URL` = `https://<your-domain>` (set after step 4, then redeploy)
+   - `NODE_ENV=production` — **required**, otherwise HSTS header isn't sent and template caching is disabled.
+   - `SITE_PUBLIC_URL` = `https://<your-domain>` (set after step 4, then redeploy). **Critical for SEO** — all canonical/OG/sitemap URLs derive from this. If unset, server falls back to `RENDER_EXTERNAL_URL` → request host.
    - `YOOKASSA_SHOP_ID`, `YOOKASSA_SECRET_KEY` — production keys from YooKassa
    - `SITE_PHONE`, `SITE_EMAIL`
    - `MAX_CHANNEL_URL`
    - `VK_ACCESS_TOKEN`, `VK_ADMIN_PEER_ID` (if using VK notify) — otherwise set `NOTIFY_VIA=off`
    - `ADMIN_PASSWORD`
    - `SMTP_PASS`
+   - Optional security knobs (all have safe defaults):
+     - `BOOKING_RATE_LIMIT` (default 5) — pending bookings per IP per 30 min
+     - `ADMIN_LOGIN_MAX_ATTEMPTS` (5), `ADMIN_LOGIN_WINDOW_MINUTES` (15), `ADMIN_LOGIN_LOCKOUT_MINUTES` (15)
+     - `BOOKING_HOLD_MINUTES` (30) — how long a `pending` booking blocks dates
+     - `YOOKASSA_WEBHOOK_SKIP_IP_CHECK` — **never set in prod**; bypasses webhook IP whitelist
 4. **Domain**:
    - Buy on reg.ru / nic.ru / any registrar.
    - In Render → Settings → Custom Domains → Add. Render gives DNS records (A / CNAME) to add at the registrar.
    - Wait for DNS propagation + TLS cert (Render provisions Let's Encrypt automatically).
-5. **YooKassa webhook**: in your YooKassa merchant cabinet, register the URL `https://<your-domain>/api/yookassa/webhook` for `payment.succeeded`.
+5. **YooKassa webhook**: in your YooKassa merchant cabinet, register the URL `https://<your-domain>/api/yookassa/webhook` for `payment.succeeded`. YooKassa's own IPs are whitelisted server-side — nothing else needs to be done.
 6. **Smoke test**: hit `https://<your-domain>/api/health` → should return `{ ok: true, uptime: ... }`.
+7. **SEO submission**:
+   - Yandex.Webmaster → добавить сайт → скормить `https://<your-domain>/sitemap.xml`.
+   - Google Search Console → same.
+   - Проверить превью в мессенджерах: https://cards-dev.twitter.com/validator, https://developers.facebook.com/tools/debug/ (Telegram/VK/WhatsApp читают тот же OG).
+   - Обновить карточку в Yandex Business / 2ГИС (URL, фото, часы).
 
 If they want a Russian host instead of Render, the same env-var + webhook flow applies on Timeweb Cloud / Selectel / Yandex Cloud, using the Dockerfile in the repo.
 
