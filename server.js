@@ -160,9 +160,36 @@ function buildYooKassaReceipt({ amount, house, checkIn, checkOut, guestEmail }) 
   };
 }
 
+const BOOKING_RATE_WINDOW_MS = 30 * 60 * 1000;
+const BOOKING_RATE_LIMIT = Number(process.env.BOOKING_RATE_LIMIT) || 5;
+const bookingAttemptsByIp = new Map();
+
+function checkBookingRateLimit(ip) {
+  const now = Date.now();
+  const cutoff = now - BOOKING_RATE_WINDOW_MS;
+  const list = (bookingAttemptsByIp.get(ip) || []).filter((t) => t > cutoff);
+  if (list.length >= BOOKING_RATE_LIMIT) {
+    bookingAttemptsByIp.set(ip, list);
+    return false;
+  }
+  list.push(now);
+  bookingAttemptsByIp.set(ip, list);
+  return true;
+}
+
 app.post('/api/booking/pay', async (req, res) => {
   try {
-    const { houseNumber, checkIn, checkOut, guestName, guestPhone, guestEmail, guests, consent } = req.body;
+    const { houseNumber, checkIn, checkOut, guestName, guestPhone, guestEmail, guests, consent, website } = req.body;
+
+    if (typeof website === 'string' && website.trim() !== '') {
+      console.warn('[Booking] honeypot triggered from', clientIp(req));
+      return res.status(400).json({ ok: false, error: 'Некорректный запрос' });
+    }
+
+    const ip = clientIp(req);
+    if (!checkBookingRateLimit(ip)) {
+      return res.status(429).json({ ok: false, error: 'Слишком много попыток. Попробуйте позже.' });
+    }
 
     if (!houseNumber || !checkIn || !checkOut || !guestName || !guestPhone || !guestEmail) {
       return res.status(400).json({ ok: false, error: 'Заполните все обязательные поля, включая email' });

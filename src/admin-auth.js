@@ -1,8 +1,35 @@
 import { randomUUID } from 'node:crypto';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const SESSIONS = new Map();
 const SESSION_TTL_MS = 1000 * 60 * 60 * 12;
 const COOKIE_NAME = 'admin_session';
+const SESSIONS_FILE = resolve('data', 'sessions.json');
+
+const SESSIONS = loadSessionsFromDisk();
+
+function loadSessionsFromDisk() {
+  const map = new Map();
+  if (!existsSync(SESSIONS_FILE)) return map;
+  try {
+    const raw = JSON.parse(readFileSync(SESSIONS_FILE, 'utf8'));
+    const now = Date.now();
+    for (const [token, session] of Object.entries(raw || {})) {
+      if (session?.expiresAt > now) map.set(token, session);
+    }
+  } catch {
+    /* ignore corrupt file */
+  }
+  return map;
+}
+
+function persistSessions() {
+  const dir = resolve('data');
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  const obj = {};
+  for (const [token, session] of SESSIONS) obj[token] = session;
+  writeFileSync(SESSIONS_FILE, JSON.stringify(obj, null, 2), 'utf8');
+}
 
 function isPasswordConfigured() {
   return typeof process.env.ADMIN_PASSWORD === 'string' && process.env.ADMIN_PASSWORD.length > 0;
@@ -27,9 +54,14 @@ function parseCookies(req) {
 
 function pruneExpired() {
   const now = Date.now();
+  let dirty = false;
   for (const [token, session] of SESSIONS) {
-    if (session.expiresAt <= now) SESSIONS.delete(token);
+    if (session.expiresAt <= now) {
+      SESSIONS.delete(token);
+      dirty = true;
+    }
   }
+  if (dirty) persistSessions();
 }
 
 function readSession(req) {
@@ -71,13 +103,17 @@ export function loginHandler(req, res) {
   const token = randomUUID();
   const expiresAt = Date.now() + SESSION_TTL_MS;
   SESSIONS.set(token, { createdAt: Date.now(), expiresAt });
+  persistSessions();
   setSessionCookie(res, token, SESSION_TTL_MS);
   res.json({ ok: true });
 }
 
 export function logoutHandler(req, res) {
   const session = readSession(req);
-  if (session) SESSIONS.delete(session.token);
+  if (session) {
+    SESSIONS.delete(session.token);
+    persistSessions();
+  }
   clearSessionCookie(res);
   res.json({ ok: true });
 }
