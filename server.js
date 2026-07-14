@@ -2,6 +2,7 @@ import './src/load-env.js';
 import express from 'express';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as statSyncMod from 'node:fs';
 import { root } from './src/load-env.js';
 import { YooKassaClient } from './src/yookassa-client.js';
 import {
@@ -37,6 +38,7 @@ import {
 import { getSettings, updateSettings } from './src/settings-store.js';
 import { savePhoto, deletePhotoFile } from './src/photo-store.js';
 import { isYookassaIp, extractRequestIp } from './src/yookassa-webhook.js';
+import { renderHtml } from './src/html-render.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -139,6 +141,208 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json({ limit: '1mb' }));
+
+const SITE_ADDRESS = {
+  streetAddress: 'ул. Первомайская, 17а',
+  addressLocality: 'с. Таранай',
+  addressRegion: 'Сахалинская область',
+  postalCode: '694015',
+  addressCountry: 'RU',
+};
+const SITE_GEO = { latitude: 46.631122, longitude: 142.436365 };
+const DEFAULT_OG_IMAGE_PATH = '/images/sea-sunset.jpg';
+const HOUSES_JSON_PATH = resolve(root, 'data', 'houses.json');
+const REVIEWS_JSON_PATH = resolve(root, 'data', 'reviews.json');
+
+function buildLodgingJsonLd(base) {
+  const houses = getHouses();
+  const s = getSettings();
+  const phones = [
+    s.sitePhone || process.env.SITE_PHONE,
+    s.sitePhoneSecondary,
+  ].filter(Boolean);
+  const prices = houses.map((h) => Number(h.pricePerNight) || DEFAULT_PRICE_PER_NIGHT);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const photoUrls = [...new Set(houses.flatMap((h) => h.imgs || []))].map((u) => `${base}${u}`);
+
+  const reviews = getReviews();
+  const validRatings = reviews.map((r) => Number(r.rating)).filter((n) => n >= 1 && n <= 5);
+  const aggregateRating = validRatings.length
+    ? {
+        '@type': 'AggregateRating',
+        ratingValue: (validRatings.reduce((a, b) => a + b, 0) / validRatings.length).toFixed(2),
+        reviewCount: validRatings.length,
+        bestRating: '5',
+        worstRating: '1',
+      }
+    : null;
+
+  const jsonld = {
+    '@context': 'https://schema.org',
+    '@type': 'LodgingBusiness',
+    name: 'Жемчужина-Тараная',
+    description:
+      '9 модульных домиков и 3 гостевых номера на берегу Анивского залива в селе Таранай. Мангал, баня, пляж.',
+    url: `${base}/`,
+    image: photoUrls.length ? photoUrls : [`${base}${DEFAULT_OG_IMAGE_PATH}`],
+    telephone: phones,
+    email: s.siteEmail || process.env.SITE_EMAIL || undefined,
+    priceRange: `${minPrice}–${maxPrice} RUB`,
+    address: { '@type': 'PostalAddress', ...SITE_ADDRESS },
+    geo: { '@type': 'GeoCoordinates', ...SITE_GEO },
+    hasMap: 'https://yandex.ru/maps/?ll=142.436365%2C46.631122&z=16',
+    checkinTime: '14:00',
+    checkoutTime: '12:00',
+  };
+  if (aggregateRating) jsonld.aggregateRating = aggregateRating;
+  return jsonld;
+}
+
+function pageUrl(req, pathname) {
+  return `${siteBase(req)}${pathname}`;
+}
+
+function firstAbsoluteImage(base, imgs) {
+  const first = imgs?.find(Boolean);
+  return first ? `${base}${first}` : `${base}${DEFAULT_OG_IMAGE_PATH}`;
+}
+
+app.get(['/', '/index.html'], (req, res) => {
+  const base = siteBase(req);
+  renderHtml(res, resolve(root, 'public/index.html'), {
+    CANONICAL: `${base}/`,
+    OG_URL: `${base}/`,
+    OG_IMAGE: `${base}${DEFAULT_OG_IMAGE_PATH}`,
+    JSONLD_RAW: JSON.stringify(buildLodgingJsonLd(base)),
+  });
+});
+
+app.get('/booking.html', (req, res) => {
+  const base = siteBase(req);
+  renderHtml(res, resolve(root, 'public/booking.html'), {
+    CANONICAL: `${base}/booking.html`,
+    OG_URL: `${base}/booking.html`,
+    OG_IMAGE: `${base}${DEFAULT_OG_IMAGE_PATH}`,
+  });
+});
+
+app.get('/policy.html', (req, res) => {
+  renderHtml(res, resolve(root, 'public/policy.html'), {
+    CANONICAL: pageUrl(req, '/policy.html'),
+  });
+});
+
+app.get('/requisites.html', (req, res) => {
+  renderHtml(res, resolve(root, 'public/requisites.html'), {
+    CANONICAL: pageUrl(req, '/requisites.html'),
+  });
+});
+
+app.get('/house.html', (req, res) => {
+  const base = siteBase(req);
+  const num = Number(req.query.num);
+  const house = Number.isInteger(num) ? getHouse(num) : null;
+
+  if (!house) {
+    return renderHtml(res, resolve(root, 'public/house.html'), {
+      TITLE: 'Домик не найден — Жемчужина-Тараная',
+      DESCRIPTION: 'Такого домика у нас нет. Выберите другой вариант размещения.',
+      OG_TITLE: 'Домик не найден — Жемчужина-Тараная',
+      ROBOTS: 'noindex,follow',
+      CANONICAL: `${base}/`,
+      OG_URL: `${base}/house.html`,
+      OG_IMAGE: `${base}${DEFAULT_OG_IMAGE_PATH}`,
+    });
+  }
+
+  const label = listingLabel(house);
+  const price = priceForHouse(house);
+  const guests = house.guests || 1;
+  const shortDesc =
+    (house.description && house.description.trim()) ||
+    `${label} — до ${guests} гостей, ${price} ₽/ночь. База отдыха «Жемчужина-Тараная», село Таранай, Сахалин.`;
+
+  renderHtml(res, resolve(root, 'public/house.html'), {
+    TITLE: `${label} — Жемчужина-Тараная`,
+    DESCRIPTION: shortDesc.slice(0, 300),
+    OG_TITLE: `${label} — ${price} ₽/ночь`,
+    ROBOTS: 'index,follow',
+    CANONICAL: `${base}/house.html?num=${house.num}`,
+    OG_URL: `${base}/house.html?num=${house.num}`,
+    OG_IMAGE: firstAbsoluteImage(base, house.imgs),
+  });
+});
+
+app.get('/robots.txt', (req, res) => {
+  const base = siteBase(req);
+  const body = [
+    'User-agent: *',
+    'Allow: /',
+    'Disallow: /admin.html',
+    'Disallow: /api/',
+    '',
+    `Sitemap: ${base}/sitemap.xml`,
+    '',
+  ].join('\n');
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.send(body);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  const base = siteBase(req);
+  const stat = existsSyncSafe(HOUSES_JSON_PATH) ? mtimeIsoSafe(HOUSES_JSON_PATH) : new Date().toISOString().slice(0, 10);
+  const houses = getHouses();
+
+  const urls = [
+    { loc: `${base}/`, changefreq: 'weekly', priority: '1.0', lastmod: stat },
+    { loc: `${base}/booking.html`, changefreq: 'weekly', priority: '0.9', lastmod: stat },
+    ...houses.map((h) => ({
+      loc: `${base}/house.html?num=${h.num}`,
+      changefreq: 'weekly',
+      priority: '0.8',
+      lastmod: stat,
+    })),
+    { loc: `${base}/policy.html`, changefreq: 'yearly', priority: '0.2' },
+    { loc: `${base}/requisites.html`, changefreq: 'yearly', priority: '0.2' },
+  ];
+
+  const xml =
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    urls
+      .map(
+        (u) =>
+          '  <url>' +
+          `<loc>${escapeXml(u.loc)}</loc>` +
+          (u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : '') +
+          (u.changefreq ? `<changefreq>${u.changefreq}</changefreq>` : '') +
+          (u.priority ? `<priority>${u.priority}</priority>` : '') +
+          '</url>'
+      )
+      .join('\n') +
+    '\n</urlset>\n';
+
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  res.send(xml);
+});
+
+function escapeXml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function existsSyncSafe(p) {
+  try { return statSyncMod.existsSync(p); } catch { return false; }
+}
+function mtimeIsoSafe(p) {
+  try { return statSyncMod.statSync(p).mtime.toISOString().slice(0, 10); } catch { return null; }
+}
+
 app.use(express.static(resolve(root, 'public')));
 
 app.get('/api/health', (_req, res) => {
