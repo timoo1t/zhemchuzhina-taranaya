@@ -16,10 +16,6 @@
       <a href="/" class="btn btn--book">На главную</a>
     </div>
   </main>
-  <script>
-    const params = new URLSearchParams(location.search);
-    const id = params.get('booking');
-    if (id) document.getElementById('booking-id').textContent = 'Номер брони: ' + id;
-  </script>
+  <script src="/js/booking-success.js"></script>
 </body>
 </html>
