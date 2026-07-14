@@ -36,6 +36,7 @@ import {
 } from './src/admin-auth.js';
 import { getSettings, updateSettings } from './src/settings-store.js';
 import { savePhoto, deletePhotoFile } from './src/photo-store.js';
+import { isYookassaIp, extractRequestIp } from './src/yookassa-webhook.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -220,14 +221,45 @@ app.post('/api/booking/pay', async (req, res) => {
 
 app.post('/api/yookassa/webhook', async (req, res) => {
   try {
-    const event = req.body?.event;
-    const payment = req.body?.object;
+    const skipIpCheck = process.env.YOOKASSA_WEBHOOK_SKIP_IP_CHECK === 'true';
+    const ip = extractRequestIp(req);
+    if (!skipIpCheck && !isYookassaIp(ip)) {
+      console.warn('[YooKassa webhook] Отклонён IP:', ip);
+      return res.status(403).json({ ok: false });
+    }
 
-    if (event !== 'payment.succeeded' || !payment?.metadata?.bookingId) {
+    const event = req.body?.event;
+    const paymentId = req.body?.object?.id;
+    const bookingId = req.body?.object?.metadata?.bookingId;
+
+    if (event !== 'payment.succeeded' || !paymentId || !bookingId) {
       return res.json({ ok: true });
     }
 
-    const booking = markBookingPaid(payment.metadata.bookingId, payment.id);
+    const pending = getBooking(bookingId);
+    if (!pending) return res.json({ ok: true });
+
+    const yookassa = new YooKassaClient({
+      shopId: process.env.YOOKASSA_SHOP_ID,
+      secretKey: process.env.YOOKASSA_SECRET_KEY,
+    });
+    const payment = await yookassa.getPayment(paymentId);
+
+    if (payment.status !== 'succeeded' || !payment.paid) {
+      console.warn('[YooKassa webhook] Платёж не подтверждён API:', paymentId, payment.status);
+      return res.status(409).json({ ok: false });
+    }
+    if (payment.metadata?.bookingId !== bookingId) {
+      console.warn('[YooKassa webhook] metadata.bookingId не совпадает:', paymentId);
+      return res.status(409).json({ ok: false });
+    }
+    const paidAmount = Number(payment.amount?.value);
+    if (!Number.isFinite(paidAmount) || Math.abs(paidAmount - Number(pending.amount)) > 0.01) {
+      console.warn('[YooKassa webhook] Сумма не совпадает:', paymentId, paidAmount, 'ожидали', pending.amount);
+      return res.status(409).json({ ok: false });
+    }
+
+    const booking = markBookingPaid(bookingId, paymentId);
     if (!booking) return res.json({ ok: true });
 
     const notify = await notifyAdminAboutBooking(bookingToMaxPayload(booking));

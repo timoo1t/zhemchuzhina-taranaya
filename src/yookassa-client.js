@@ -43,4 +43,18 @@ export class YooKassaClient {
     }
     return data;
   }
+
+  async getPayment(paymentId) {
+    const response = await fetch(`${API_URL}/${encodeURIComponent(paymentId)}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Basic ${this.auth}`,
+      },
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data?.description || data?.message || 'Ошибка ЮKassa');
+    }
+    return data;
+  }
 }
