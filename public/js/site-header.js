@@ -53,6 +53,7 @@ function initBurger() {
   const header = document.querySelector('.header');
   if (!burger || !header) return;
   burger.addEventListener('click', () => {
-    header.classList.toggle('nav-open');
+    const open = header.classList.toggle('nav-open');
+    burger.setAttribute('aria-expanded', String(open));
   });
 }

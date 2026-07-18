@@ -28,6 +28,7 @@
   <script src="/js/metrika.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#content">К содержанию</a>
   <header class="header header--hero" id="header">
     <div class="container header__inner">
       <a href="/" class="logo">
@@ -47,11 +48,11 @@
         </a>
         <a href="/booking.html" class="btn btn--book header__cta">Забронировать</a>
       </div>
-      <button class="burger" aria-label="Меню" id="burger"><span></span><span></span><span></span></button>
+      <button class="burger" aria-label="Меню" aria-expanded="false" aria-controls="header-menu" id="burger"><span></span><span></span><span></span></button>
     </div>
   </header>
 
-  <section class="hero-ideadom">
+  <section class="hero-ideadom" id="content" tabindex="-1">
     <div class="hero-ideadom__bg" aria-hidden="true"></div>
     <div class="hero-ideadom__shade" aria-hidden="true"></div>
     <div class="container hero-ideadom__content">

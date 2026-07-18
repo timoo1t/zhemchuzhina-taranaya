@@ -32,6 +32,33 @@
 
 html { scroll-behavior: smooth; }
 
+/* Keyboard skip-to-content: hidden until focused */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 1000;
+  padding: 0.6rem 1rem;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 1rem;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+/* Content targets receive focus from the skip-link but show no focus ring */
+#content:focus { outline: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .skip-link { transition: none; }
+}
+
 body {
   margin: 0;
   font-family: var(--font);

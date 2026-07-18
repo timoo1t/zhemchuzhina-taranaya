@@ -474,8 +474,9 @@ function initBurger() {
   if (!burger || !header) return;
 
   burger.addEventListener('click', () => {
-    header.classList.toggle('nav-open');
+    const open = header.classList.toggle('nav-open');
     header.classList.add('header--solid');
+    burger.setAttribute('aria-expanded', String(open));
   });
 }
 
