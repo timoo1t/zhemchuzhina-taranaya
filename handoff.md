@@ -20,6 +20,9 @@ Self-orientation file for the assistant. Read this **first** when returning to t
 | `src/yookassa-client.js` | YooKassa REST wrapper — `createPayment` + `getPayment` (used by webhook to re-verify) |
 | `src/yookassa-webhook.js` | CIDR check for YooKassa source IPs (v4 CIDRs + `2a02:5180::/32`) — used by `/api/yookassa/webhook` |
 | `src/html-render.js` | Template helper: cached file read + `{{PLACEHOLDER}}` substitution with HTML escape (use `_RAW` suffix to skip escape, e.g. `JSONLD_RAW`) |
+| `src/sanitize.js` | Server-side input sanitization — `sanitizePlainText` / `sanitizeSingleLine` (strip tags + control chars, clamp length) and `sanitizeUrl` (protocol allowlist). Used by all stores on write |
+| `src/json-file.js` | Safe JSON persistence — `writeJsonFile` (atomic temp-write + rename, keeps `<file>.bak` of last valid version) / `readJsonFile` (falls back to `.bak` if main file corrupt). Backs every store |
+| `src/backup.js` | Daily backup scheduler — copies data JSONs into `data/backups/<YYYY-MM-DD>/`, prunes snapshots older than `BACKUP_KEEP_DAYS` (30). Started from `startServer()` unless `BACKUP_DISABLED=true` |
 | `src/settings-store.js` | `data/settings.json` — site phones/email/MAX URL, edited via admin |
 | `src/photo-store.js` | Handles admin base64 photo uploads → `public/images/uploads/` |
 | `data/houses.json` | Source of truth for all listings (cabins, rooms, whole-base) |
@@ -32,6 +35,7 @@ Self-orientation file for the assistant. Read this **first** when returning to t
 | `public/house.html` | Listing detail + booking widget. Server-rendered per `?num=` |
 | `public/booking.html` | Booking form + payment start. Includes hidden honeypot input |
 | `public/policy.html` / `public/requisites.html` / `public/booking-success.html` | Static pages, `noindex` |
+| `public/404.html` / `public/500.html` | Branded error pages (compact header + footer, CSP-safe, no inline JS). Served by the catch-all + error middleware in `server.js` for non-`/api/` paths |
 | `public/favicon.svg` | Inline SVG favicon (жемчужина) |
 | `public/js/main.js` | Homepage rendering |
 | `public/js/house.js` | Detail page + widget + availability |
@@ -125,6 +129,15 @@ Each entry:
 - [x] **`/sitemap.xml`** — dynamic: `/`, `/booking.html`, `/house.html?num=X` for every entry in `houses.json`, `/policy.html`, `/requisites.html`. `<lastmod>` from `houses.json` mtime.
 - [x] **`noindex` on non-SEO pages**: `policy.html`, `requisites.html`, `booking-success.html`.
 - [x] **Favicon**: `public/favicon.svg` (inline SVG жемчужина).
+
+### Hardening + resilience + perf (session 2026-07-18)
+- [x] **Server-side sanitization (XSS defense-in-depth)** — new `src/sanitize.js`. Every user-writable field is cleaned on write, so stored JSON can never carry markup/scripts even if the frontend forgot to escape:
+  - `src/content-store.js`: `updateHouse` (title/beds/description/tags/amenities), `addReview` + `updateReview` (author/text), `addBlockedRange` (reason).
+  - `src/booking-store.js`: `createBooking` + `updateBooking` via `sanitizeBookingFields` (guestName/guestPhone/guestEmail/note).
+  - `src/settings-store.js`: phones/email via `sanitizeSingleLine`, `maxChannelUrl` via `sanitizeUrl` (protocol allowlist → blocks `javascript:`).
+- [x] **Branded 404 / 500 pages** — `public/404.html`, `public/500.html` (CSP-safe). `server.js` catch-all returns JSON for `/api/*`, else renders `404.html`; error middleware returns JSON for `/api/*`, else `500.html`. `.error-page` styles added to `public/css/style.css`.
+- [x] **Perf pass** — `index.html` head has `<link rel="preload" as="image" href="/images/hero.jpg" fetchpriority="high">` (hero is a CSS background, so preload is the right lever). Audited every `<img>`: below-fold images `loading="lazy"`, decorative icons `alt=""` + explicit `width`/`height`, content images have descriptive alt. JS-rendered galleries (`main.js`/`house.js`/`booking.js`/`admin.js`) set `loading="lazy"` (first slide `eager`) + alt.
+- [x] **Backup-on-write for JSON files** — `src/json-file.js`. `writeJsonFile` writes to a temp file then `rename`s over the target (atomic — a crash mid-write can't truncate the file) and keeps a `<file>.bak` of the last *valid* version before each overwrite (a corrupt file is never copied over the good `.bak`). `readJsonFile` transparently recovers from `.bak` when the main file is missing/unparseable. All three stores (content/booking/settings) now route through it. `.bak`/`.tmp` land under `data/` → already gitignored. This is separate from and complements the daily `src/backup.js` scheduler.
 
 ---
 

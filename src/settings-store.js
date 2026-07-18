@@ -1,25 +1,25 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { sanitizeSingleLine, sanitizeUrl } from './sanitize.js';
+import { readJsonFile, writeJsonFile } from './json-file.js';
 
 const FILE = resolve('data', 'settings.json');
 const ALLOWED = ['sitePhone', 'sitePhoneSecondary', 'siteEmail', 'maxChannelUrl'];
 
+function cleanValue(key, value) {
+  if (key === 'maxChannelUrl') return sanitizeUrl(value);
+  if (key === 'siteEmail') return sanitizeSingleLine(value, { maxLen: 200 });
+  return sanitizeSingleLine(value, { maxLen: 60 });
+}
+
 export function getSettings() {
-  if (!existsSync(FILE)) return {};
-  try {
-    return JSON.parse(readFileSync(FILE, 'utf8'));
-  } catch {
-    return {};
-  }
+  return readJsonFile(FILE, {});
 }
 
 export function updateSettings(patch) {
   const current = getSettings();
   for (const key of ALLOWED) {
-    if (key in patch) current[key] = String(patch[key] || '').trim();
+    if (key in patch) current[key] = cleanValue(key, patch[key]);
   }
-  const dir = resolve('data');
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  writeFileSync(FILE, JSON.stringify(current, null, 2), 'utf8');
+  writeJsonFile(FILE, current);
   return current;
 }

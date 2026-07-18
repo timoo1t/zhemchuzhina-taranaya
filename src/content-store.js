@@ -1,5 +1,6 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { sanitizePlainText, sanitizeSingleLine } from './sanitize.js';
+import { readJsonFile, writeJsonFile } from './json-file.js';
 
 const DATA_DIR = resolve('data');
 
@@ -8,18 +9,11 @@ function fileFor(name) {
 }
 
 function readJson(name, fallback) {
-  const file = fileFor(name);
-  if (!existsSync(file)) return fallback;
-  try {
-    return JSON.parse(readFileSync(file, 'utf8'));
-  } catch {
-    return fallback;
-  }
+  return readJsonFile(fileFor(name), fallback);
 }
 
 function writeJson(name, data) {
-  if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
-  writeFileSync(fileFor(name), JSON.stringify(data, null, 2), 'utf8');
+  writeJsonFile(fileFor(name), data);
 }
 
 /* Houses */
@@ -38,7 +32,17 @@ export function updateHouse(num, patch) {
   if (idx === -1) return null;
   const allowed = ['guests', 'beds', 'tags', 'imgs', 'description', 'amenities', 'pricePerNight', 'title', 'type'];
   for (const key of allowed) {
-    if (key in patch) houses[idx][key] = patch[key];
+    if (!(key in patch)) continue;
+    let value = patch[key];
+    if (key === 'title') value = sanitizeSingleLine(value, { maxLen: 200 });
+    else if (key === 'beds') value = sanitizeSingleLine(value, { maxLen: 200 });
+    else if (key === 'description') value = sanitizePlainText(value, { maxLen: 3000 });
+    else if (key === 'tags' && Array.isArray(value)) {
+      value = value.map((t) => sanitizeSingleLine(t, { maxLen: 40 })).filter(Boolean).slice(0, 20);
+    } else if (key === 'amenities' && Array.isArray(value)) {
+      value = value.map((t) => sanitizeSingleLine(t, { maxLen: 80 })).filter(Boolean).slice(0, 40);
+    }
+    houses[idx][key] = value;
   }
   writeJson('houses', houses);
   return houses[idx];
@@ -55,7 +59,14 @@ export function getBlockedRanges(houseNum) {
 export function addBlockedRange({ houseNum, from, to, reason = '' }) {
   const all = readJson('blocked-dates', []);
   const id = `BD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  const range = { id, houseNum: Number(houseNum), from, to, reason, createdAt: new Date().toISOString() };
+  const range = {
+    id,
+    houseNum: Number(houseNum),
+    from,
+    to,
+    reason: sanitizeSingleLine(reason, { maxLen: 200 }),
+    createdAt: new Date().toISOString(),
+  };
   all.push(range);
   writeJson('blocked-dates', all);
   return range;
@@ -80,11 +91,11 @@ export function addReview({ author, houseNum, date, rating, text }) {
   const id = `R-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const review = {
     id,
-    author: String(author || '').trim(),
+    author: sanitizeSingleLine(author, { maxLen: 60 }),
     houseNum: houseNum ? Number(houseNum) : null,
     date: date || new Date().toISOString().slice(0, 10),
     rating: Math.max(1, Math.min(5, Number(rating) || 5)),
-    text: String(text || '').trim(),
+    text: sanitizePlainText(text, { maxLen: 1500 }),
   };
   all.push(review);
   writeJson('reviews', all);
@@ -97,7 +108,13 @@ export function updateReview(id, patch) {
   if (idx === -1) return null;
   const allowed = ['author', 'houseNum', 'date', 'rating', 'text'];
   for (const key of allowed) {
-    if (key in patch) all[idx][key] = patch[key];
+    if (!(key in patch)) continue;
+    let value = patch[key];
+    if (key === 'author') value = sanitizeSingleLine(value, { maxLen: 60 });
+    else if (key === 'text') value = sanitizePlainText(value, { maxLen: 1500 });
+    else if (key === 'rating') value = Math.max(1, Math.min(5, Number(value) || 5));
+    else if (key === 'houseNum') value = value ? Number(value) : null;
+    all[idx][key] = value;
   }
   writeJson('reviews', all);
   return all[idx];

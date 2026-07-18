@@ -1,5 +1,15 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { sanitizePlainText, sanitizeSingleLine } from './sanitize.js';
+import { readJsonFile, writeJsonFile } from './json-file.js';
+
+function sanitizeBookingFields(patch) {
+  const out = { ...patch };
+  if ('guestName' in out) out.guestName = sanitizeSingleLine(out.guestName, { maxLen: 120 });
+  if ('guestPhone' in out) out.guestPhone = sanitizeSingleLine(out.guestPhone, { maxLen: 40 });
+  if ('guestEmail' in out) out.guestEmail = sanitizeSingleLine(out.guestEmail, { maxLen: 200 });
+  if ('note' in out) out.note = sanitizePlainText(out.note, { maxLen: 1000 });
+  return out;
+}
 
 const FILE = resolve('data', 'bookings.json');
 
@@ -7,18 +17,11 @@ const PENDING_HOLD_MINUTES = Number(process.env.BOOKING_HOLD_MINUTES) || 30;
 const PENDING_HOLD_MS = PENDING_HOLD_MINUTES * 60 * 1000;
 
 function load() {
-  if (!existsSync(FILE)) return {};
-  try {
-    return JSON.parse(readFileSync(FILE, 'utf8'));
-  } catch {
-    return {};
-  }
+  return readJsonFile(FILE, {});
 }
 
 function save(data) {
-  const dir = resolve('data');
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  writeFileSync(FILE, JSON.stringify(data, null, 2), 'utf8');
+  writeJsonFile(FILE, data);
 }
 
 function isPendingActive(b, now = Date.now()) {
@@ -56,7 +59,8 @@ export function getPendingHoldMinutes() {
 export function createBooking(payload) {
   const id = `BR-${Date.now()}`;
   const all = load();
-  all[id] = { id, status: 'pending', createdAt: new Date().toISOString(), ...payload };
+  const clean = sanitizeBookingFields(payload);
+  all[id] = { id, status: 'pending', createdAt: new Date().toISOString(), ...clean };
   save(all);
   return all[id];
 }
@@ -87,8 +91,9 @@ export function updateBooking(id, patch) {
     'guestName', 'guestPhone', 'guestEmail', 'guests', 'amount',
     'houseNumber', 'note', 'cancelledAt',
   ];
+  const clean = sanitizeBookingFields(patch);
   for (const key of allowed) {
-    if (key in patch) all[id][key] = patch[key];
+    if (key in clean) all[id][key] = clean[key];
   }
   save(all);
   return all[id];

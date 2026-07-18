@@ -39,12 +39,14 @@ import { getSettings, updateSettings } from './src/settings-store.js';
 import { savePhoto, deletePhotoFile } from './src/photo-store.js';
 import { isYookassaIp, extractRequestIp } from './src/yookassa-webhook.js';
 import { renderHtml } from './src/html-render.js';
+import { startBackupScheduler } from './src/backup.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 app.set('trust proxy', 1);
 app.set('etag', false);
+app.disable('x-powered-by');
 
 function publicSiteUrl(req) {
   const fromEnv =
@@ -809,12 +811,36 @@ app.delete('/api/admin/reviews/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+app.use((req, res) => {
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ ok: false, error: 'Not found' });
+  }
+  res.status(404);
+  renderHtml(res, resolve(root, 'public/404.html'), {});
+});
+
+app.use((err, req, res, _next) => {
+  console.error('[Unhandled]', err?.stack || err);
+  if (req.path.startsWith('/api/')) {
+    return res.status(500).json({ ok: false, error: 'Внутренняя ошибка сервера' });
+  }
+  res.status(500);
+  renderHtml(res, resolve(root, 'public/500.html'), {});
+});
+
 export function startServer() {
   return new Promise((resolveReady) => {
     const server = app.listen(PORT, '0.0.0.0', () => {
       const url = process.env.SITE_PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
       console.log(`Сайт: ${url}`);
       console.log(`Health: ${url.replace(/\/$/, '')}/api/health`);
+      if (process.env.BACKUP_DISABLED !== 'true') {
+        startBackupScheduler({
+          dataDir: resolve(root, 'data'),
+          backupDir: resolve(root, 'data', 'backups'),
+          keepDays: Number(process.env.BACKUP_KEEP_DAYS) || 30,
+        });
+      }
       resolveReady(server);
     });
   });
