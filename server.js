@@ -99,13 +99,17 @@ function crossBlockedRangesFor(num) {
   return crossBlockedPure(num, getHouses(), collect);
 }
 
+const METRIKA_ID = process.env.YANDEX_METRIKA_ID || '';
+const METRIKA_ENABLED = Boolean(METRIKA_ID);
+const MC = 'https://mc.yandex.ru'; // Yandex.Metrika host (added to CSP only when enabled)
+
 const CSP = [
   "default-src 'self'",
-  "script-src 'self'",
+  `script-src 'self'${METRIKA_ENABLED ? ` ${MC}` : ''}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data:",
-  "connect-src 'self'",
+  `img-src 'self' data:${METRIKA_ENABLED ? ` ${MC}` : ''}`,
+  `connect-src 'self'${METRIKA_ENABLED ? ` ${MC}` : ''}`,
   "frame-src https://yandex.ru https://*.yandex.ru",
   "frame-ancestors 'none'",
   "base-uri 'self'",
@@ -345,6 +349,7 @@ app.get('/api/config', (req, res) => {
     siteEmail: s.siteEmail || process.env.SITE_EMAIL || '',
     maxChannelUrl: s.maxChannelUrl || process.env.MAX_CHANNEL_URL || '',
     pricePerNight: DEFAULT_PRICE_PER_NIGHT,
+    metrikaId: METRIKA_ID,
     publicUrl: publicBase || null,
   });
 });

@@ -33,3 +33,5 @@ services:
         sync: false
       - key: SITE_EMAIL
         sync: false
+      - key: YANDEX_METRIKA_ID
+        sync: false
