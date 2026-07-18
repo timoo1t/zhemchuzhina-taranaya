@@ -8,6 +8,12 @@ services:
     plan: starter
     region: frankfurt
     healthCheckPath: /api/health
+    # Персистентное хранилище для data/ (брони, отзывы, настройки, сессии).
+    # Без него всё в data/ сбрасывается при каждом деплое/рестарте.
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production

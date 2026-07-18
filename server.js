@@ -40,6 +40,7 @@ import { savePhoto, deletePhotoFile } from './src/photo-store.js';
 import { isYookassaIp, extractRequestIp } from './src/yookassa-webhook.js';
 import { renderHtml } from './src/html-render.js';
 import { startBackupScheduler } from './src/backup.js';
+import { ensureSeedData } from './src/seed.js';
 import {
   calcAmount as calcAmountPure,
   rangesOverlap,
@@ -824,6 +825,7 @@ app.use((err, req, res, _next) => {
 });
 
 export function startServer() {
+  ensureSeedData();
   return new Promise((resolveReady) => {
     const server = app.listen(PORT, '0.0.0.0', () => {
       const url = process.env.SITE_PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
