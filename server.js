@@ -228,6 +228,12 @@ app.get('/requisites.html', (req, res) => {
   });
 });
 
+app.get('/offer.html', (req, res) => {
+  renderHtml(res, resolve(root, 'public/offer.html'), {
+    CANONICAL: pageUrl(req, '/offer.html'),
+  });
+});
+
 app.get('/house.html', (req, res) => {
   const base = siteBase(req);
   const num = Number(req.query.num);
@@ -294,6 +300,7 @@ app.get('/sitemap.xml', (req, res) => {
     })),
     { loc: `${base}/policy.html`, changefreq: 'yearly', priority: '0.2' },
     { loc: `${base}/requisites.html`, changefreq: 'yearly', priority: '0.2' },
+    { loc: `${base}/offer.html`, changefreq: 'yearly', priority: '0.2' },
   ];
 
   const xml =
