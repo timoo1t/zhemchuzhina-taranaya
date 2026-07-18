@@ -40,6 +40,11 @@ import { savePhoto, deletePhotoFile } from './src/photo-store.js';
 import { isYookassaIp, extractRequestIp } from './src/yookassa-webhook.js';
 import { renderHtml } from './src/html-render.js';
 import { startBackupScheduler } from './src/backup.js';
+import {
+  calcAmount as calcAmountPure,
+  rangesOverlap,
+  crossBlockedRangesFor as crossBlockedPure,
+} from './src/availability.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -74,15 +79,7 @@ function priceForHouse(houseOrNum) {
 }
 
 function calcAmount(houseNumber, checkIn, checkOut) {
-  const perNight = priceForHouse(houseNumber);
-  const start = new Date(checkIn);
-  const end = new Date(checkOut);
-  const nights = Math.max(1, Math.round((end - start) / 86400000));
-  return nights * perNight;
-}
-
-function rangesOverlap(aFrom, aTo, bFrom, bTo) {
-  return aFrom < bTo && aTo > bFrom;
+  return calcAmountPure(priceForHouse(houseNumber), checkIn, checkOut);
 }
 
 function findDateConflict(houseNumber, checkIn, checkOut, { ignoreBookingId } = {}) {
@@ -95,25 +92,11 @@ function findDateConflict(houseNumber, checkIn, checkOut, { ignoreBookingId } = 
 }
 
 function crossBlockedRangesFor(num) {
-  const houses = getHouses();
-  const target = houses.find((h) => Number(h.num) === Number(num));
-  if (!target) return [];
-
-  const whole = houses.find((h) => h.type === 'whole');
-  const parts = houses.filter((h) => h.type === 'cabin' || h.type === 'room');
-
-  const collect = (h) => [
-    ...getBlockedRanges(h.num).map((r) => ({ from: r.from, to: r.to, source: 'manual', origin: h.num })),
-    ...getBookedRanges(h.num).map((r) => ({ ...r, origin: h.num })),
+  const collect = (houseNum) => [
+    ...getBlockedRanges(houseNum).map((r) => ({ from: r.from, to: r.to, source: 'manual', origin: houseNum })),
+    ...getBookedRanges(houseNum).map((r) => ({ ...r, origin: houseNum })),
   ];
-
-  if (target.type === 'whole') {
-    return parts.flatMap(collect);
-  }
-  if (whole && Number(whole.num) !== Number(num)) {
-    return collect(whole);
-  }
-  return [];
+  return crossBlockedPure(num, getHouses(), collect);
 }
 
 const CSP = [

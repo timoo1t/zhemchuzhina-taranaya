@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "test": "node --test",
     "mobile": "node scripts/start-mobile.js",
     "tunnel": "scripts\\pinggy-ssh.bat",
     "test-bot": "node scripts/test-bot.js",
