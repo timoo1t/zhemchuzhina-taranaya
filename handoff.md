@@ -36,6 +36,10 @@ Self-orientation file for the assistant. Read this **first** when returning to t
 | `public/booking.html` | Booking form + payment start. Includes hidden honeypot input |
 | `public/policy.html` / `public/requisites.html` / `public/booking-success.html` | Static pages, `noindex` |
 | `public/404.html` / `public/500.html` | Branded error pages (compact header + footer, CSP-safe, no inline JS). Served by the catch-all + error middleware in `server.js` for non-`/api/` paths |
+| `public/offer.html` | Публичная оферта на бронирование (`noindex`). SSR route `/offer.html`, in sitemap, linked from booking consent + footers |
+| `src/availability.js` | Pure money-path logic (dep-free): `nightsBetween`, `calcAmount`, `rangesOverlap`, `crossBlockedRangesFor`. `server.js` wraps these with store data. Unit-tested |
+| `public/js/metrika.js` | CSP-safe Yandex.Metrika loader — reads counter id from `/api/config`, no-op if unset. `window.__ym(goal)` queues + replays conversion goals |
+| `test/*.test.js` | `node:test` suites (zero deps): `availability`, `sanitize`, `json-file`. Run with `npm test` |
 | `public/favicon.svg` | Inline SVG favicon (жемчужина) |
 | `public/js/main.js` | Homepage rendering |
 | `public/js/house.js` | Detail page + widget + availability |
@@ -139,6 +143,12 @@ Each entry:
 - [x] **Perf pass** — `index.html` head has `<link rel="preload" as="image" href="/images/hero.jpg" fetchpriority="high">` (hero is a CSS background, so preload is the right lever). Audited every `<img>`: below-fold images `loading="lazy"`, decorative icons `alt=""` + explicit `width`/`height`, content images have descriptive alt. JS-rendered galleries (`main.js`/`house.js`/`booking.js`/`admin.js`) set `loading="lazy"` (first slide `eager`) + alt.
 - [x] **Backup-on-write for JSON files** — `src/json-file.js`. `writeJsonFile` writes to a temp file then `rename`s over the target (atomic — a crash mid-write can't truncate the file) and keeps a `<file>.bak` of the last *valid* version before each overwrite (a corrupt file is never copied over the good `.bak`). `readJsonFile` transparently recovers from `.bak` when the main file is missing/unparseable. All three stores (content/booking/settings) now route through it. `.bak`/`.tmp` land under `data/` → already gitignored. This is separate from and complements the daily `src/backup.js` scheduler.
 
+### Tests + analytics + оферта + a11y (session 2026-07-18, part 2)
+- [x] **Money-path tests** — extracted pure logic into `src/availability.js` (`nightsBetween`, `calcAmount`, `rangesOverlap`, `crossBlockedRangesFor`); `server.js` now wraps it (behavior identical, verified via availability endpoint). `node:test` suites (zero deps, `npm test`): `test/availability.test.js` (pricing + cross-block branching + edge-touch dates), `test/sanitize.test.js` (tag/script/control-char stripping, url protocol allowlist), `test/json-file.test.js` (atomic write, `.bak` recovery, no-clobber-on-corrupt, no tmp leftovers). 26 tests green.
+- [x] **Yandex.Metrika (optional, off by default)** — `YANDEX_METRIKA_ID` env → exposed via `/api/config`. `public/js/metrika.js` (no inline JS) loads the counter only if id set; `window.__ym('booking')` goal fires on `booking-success`. CSP loosens to `https://mc.yandex.ru` (script/img/connect) **only when id is set** — stays strict otherwise. Script tag added to every page. Wired in `.env.example` + `render.yaml`.
+- [x] **Публичная оферта** — `public/offer.html` (акцепт через оплату, условия отмены/возврата, расчётный час 14:00/12:00, ссылки на политику + реквизиты). SSR route `/offer.html`, in sitemap, linked from booking consent checkbox + index/house/booking footers.
+- [x] **Accessibility** — `.skip-link` (hidden until keyboard focus) → focusable `#content` target on index/house/booking (homepage previously had no main landmark). Burger buttons get `aria-expanded`/`aria-controls`, both JS handlers sync the state on toggle. `prefers-reduced-motion` also disables smooth-scroll (reveal animations already respected it).
+
 ---
 
 ## ⛔ Not done / open loops
@@ -179,6 +189,7 @@ The project ships with `render.yaml` — it's a Render Blueprint.
    - `YOOKASSA_SHOP_ID`, `YOOKASSA_SECRET_KEY` — production keys from YooKassa
    - `SITE_PHONE`, `SITE_EMAIL`
    - `MAX_CHANNEL_URL`
+   - `YANDEX_METRIKA_ID` — номер счётчика Метрики (пусто = аналитика выключена, CSP не ослабляется)
    - `VK_ACCESS_TOKEN`, `VK_ADMIN_PEER_ID` (if using VK notify) — otherwise set `NOTIFY_VIA=off`
    - `ADMIN_PASSWORD`
    - `SMTP_PASS`
