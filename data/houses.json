@@ -174,7 +174,7 @@
     "type": "cabin",
     "guests": 8,
     "beds": "4 спальни",
-    "pricePerNight": 5000,
+    "pricePerNight": 7000,
     "tags": [
       "Мангал",
       "Wi-Fi",
@@ -188,7 +188,8 @@
       "/images/bbq.jpg"
     ],
     "description": "",
-    "amenities": []
+    "amenities": [],
+    "title": ""
   },
   {
     "num": 10,
