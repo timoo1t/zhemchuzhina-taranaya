@@ -1,3 +1,9 @@
+/* `hidden` must always win over display:flex/grid rules below
+   (a class selector otherwise overrides the UA [hidden] rule). */
+[hidden] {
+  display: none !important;
+}
+
 .admin-page {
   background: var(--paper);
   min-height: 100vh;
